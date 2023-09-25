@@ -1,0 +1,12 @@
+assign:
+  strategy:
+    # random
+    # round-robin
+    daily-shift-based
+  assignees:
+    - xiexinch
+    - csatsurnh
+    - xiexinch
+    - csatsurnh
+    - xiexinch
+    - csatsurnh
