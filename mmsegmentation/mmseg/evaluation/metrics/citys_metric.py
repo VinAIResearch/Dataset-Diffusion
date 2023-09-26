@@ -4,8 +4,8 @@ import shutil
 from collections import OrderedDict
 from typing import Dict, Optional, Sequence
 
-try:
 
+try:
     import cityscapesscripts.evaluation.evalPixelLevelSemanticLabeling as CSEval  # noqa
     import cityscapesscripts.helpers.labels as CSLabels
 except ImportError:
@@ -17,9 +17,8 @@ from mmengine.dist import is_main_process, master_only
 from mmengine.evaluator import BaseMetric
 from mmengine.logging import MMLogger, print_log
 from mmengine.utils import mkdir_or_exist
-from PIL import Image
-
 from mmseg.registry import METRICS
+from PIL import Image
 
 
 @METRICS.register_module()
@@ -45,26 +44,28 @@ class CityscapesMetric(BaseMetric):
             will be used instead. Defaults to None.
     """
 
-    def __init__(self,
-                 output_dir: str,
-                 ignore_index: int = 255,
-                 format_only: bool = False,
-                 keep_results: bool = False,
-                 collect_device: str = 'cpu',
-                 prefix: Optional[str] = None,
-                 **kwargs) -> None:
+    def __init__(
+        self,
+        output_dir: str,
+        ignore_index: int = 255,
+        format_only: bool = False,
+        keep_results: bool = False,
+        collect_device: str = "cpu",
+        prefix: Optional[str] = None,
+        **kwargs,
+    ) -> None:
         super().__init__(collect_device=collect_device, prefix=prefix)
         if CSEval is None:
-            raise ImportError('Please run "pip install cityscapesscripts" to '
-                              'install cityscapesscripts first.')
+            raise ImportError('Please run "pip install cityscapesscripts" to ' "install cityscapesscripts first.")
         self.output_dir = output_dir
         self.ignore_index = ignore_index
 
         self.format_only = format_only
         if format_only:
             assert keep_results, (
-                'When format_only is True, the results must be keep, please '
-                f'set keep_results as True, but got {keep_results}')
+                "When format_only is True, the results must be keep, please "
+                f"set keep_results as True, but got {keep_results}"
+            )
         self.keep_results = keep_results
         self.prefix = prefix
         if is_main_process():
@@ -89,23 +90,21 @@ class CityscapesMetric(BaseMetric):
         mkdir_or_exist(self.output_dir)
 
         for data_sample in data_samples:
-            pred_label = data_sample['pred_sem_seg']['data'][0].cpu().numpy()
+            pred_label = data_sample["pred_sem_seg"]["data"][0].cpu().numpy()
             # when evaluating with official cityscapesscripts,
             # labelIds should be used
             pred_label = self._convert_to_label_id(pred_label)
-            basename = osp.splitext(osp.basename(data_sample['img_path']))[0]
-            png_filename = osp.abspath(
-                osp.join(self.output_dir, f'{basename}.png'))
-            output = Image.fromarray(pred_label.astype(np.uint8)).convert('P')
+            basename = osp.splitext(osp.basename(data_sample["img_path"]))[0]
+            png_filename = osp.abspath(osp.join(self.output_dir, f"{basename}.png"))
+            output = Image.fromarray(pred_label.astype(np.uint8)).convert("P")
             output.save(png_filename)
             if self.format_only:
                 # format_only always for test dataset without ground truth
-                gt_filename = ''
+                gt_filename = ""
             else:
                 # when evaluating with official cityscapesscripts,
                 # **_gtFine_labelIds.png is used
-                gt_filename = data_sample['seg_map_path'].replace(
-                    'labelTrainIds.png', 'labelIds.png')
+                gt_filename = data_sample["seg_map_path"].replace("labelTrainIds.png", "labelIds.png")
             self.results.append((png_filename, gt_filename))
 
     def compute_metrics(self, results: list) -> Dict[str, float]:
@@ -119,17 +118,16 @@ class CityscapesMetric(BaseMetric):
         """
         logger: MMLogger = MMLogger.get_current_instance()
         if self.format_only:
-            logger.info(f'results are saved to {osp.dirname(self.output_dir)}')
+            logger.info(f"results are saved to {osp.dirname(self.output_dir)}")
             return OrderedDict()
 
-        msg = 'Evaluating in Cityscapes style'
+        msg = "Evaluating in Cityscapes style"
         if logger is None:
-            msg = '\n' + msg
+            msg = "\n" + msg
         print_log(msg, logger=logger)
 
         eval_results = dict()
-        print_log(
-            f'Evaluating results under {self.output_dir} ...', logger=logger)
+        print_log(f"Evaluating results under {self.output_dir} ...", logger=logger)
 
         CSEval.args.evalInstLevelScore = True
         CSEval.args.predictionPath = osp.abspath(self.output_dir)
@@ -138,12 +136,9 @@ class CityscapesMetric(BaseMetric):
 
         pred_list, gt_list = zip(*results)
         metric = dict()
-        eval_results.update(
-            CSEval.evaluateImgLists(pred_list, gt_list, CSEval.args))
-        metric['averageScoreCategories'] = eval_results[
-            'averageScoreCategories']
-        metric['averageScoreInstCategories'] = eval_results[
-            'averageScoreInstCategories']
+        eval_results.update(CSEval.evaluateImgLists(pred_list, gt_list, CSEval.args))
+        metric["averageScoreCategories"] = eval_results["averageScoreCategories"]
+        metric["averageScoreInstCategories"] = eval_results["averageScoreInstCategories"]
         return metric
 
     @staticmethod

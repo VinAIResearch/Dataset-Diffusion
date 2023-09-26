@@ -1,29 +1,28 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 import pytest
 import torch
-
 from mmseg.models.backbones import STDCContextPathNet
-from mmseg.models.backbones.stdc import (AttentionRefinementModule,
-                                         FeatureFusionModule, STDCModule,
-                                         STDCNet)
+from mmseg.models.backbones.stdc import AttentionRefinementModule, FeatureFusionModule, STDCModule, STDCNet
 
 
 def test_stdc_context_path_net():
     # Test STDCContextPathNet Standard Forward
     model = STDCContextPathNet(
         backbone_cfg=dict(
-            type='STDCNet',
-            stdc_type='STDCNet1',
+            type="STDCNet",
+            stdc_type="STDCNet1",
             in_channels=3,
             channels=(32, 64, 256, 512, 1024),
-            bottleneck_type='cat',
+            bottleneck_type="cat",
             num_convs=4,
-            norm_cfg=dict(type='BN', requires_grad=True),
-            act_cfg=dict(type='ReLU'),
-            with_final_conv=True),
+            norm_cfg=dict(type="BN", requires_grad=True),
+            act_cfg=dict(type="ReLU"),
+            with_final_conv=True,
+        ),
         last_in_channels=(1024, 512),
         out_channels=128,
-        ffm_cfg=dict(in_channels=384, out_channels=256, scale_factor=4))
+        ffm_cfg=dict(in_channels=384, out_channels=256, scale_factor=4),
+    )
     model.init_weights()
     model.train()
     batch_size = 2
@@ -45,18 +44,20 @@ def test_stdc_context_path_net():
     imgs = torch.randn(batch_size, 3, 527, 279)
     model = STDCContextPathNet(
         backbone_cfg=dict(
-            type='STDCNet',
-            stdc_type='STDCNet1',
+            type="STDCNet",
+            stdc_type="STDCNet1",
             in_channels=3,
             channels=(32, 64, 256, 512, 1024),
-            bottleneck_type='add',
+            bottleneck_type="add",
             num_convs=4,
-            norm_cfg=dict(type='BN', requires_grad=True),
-            act_cfg=dict(type='ReLU'),
-            with_final_conv=False),
+            norm_cfg=dict(type="BN", requires_grad=True),
+            act_cfg=dict(type="ReLU"),
+            with_final_conv=False,
+        ),
         last_in_channels=(1024, 512),
         out_channels=128,
-        ffm_cfg=dict(in_channels=384, out_channels=256, scale_factor=4))
+        ffm_cfg=dict(in_channels=384, out_channels=256, scale_factor=4),
+    )
     model.init_weights()
     model.train()
     feat = model(imgs)
@@ -67,38 +68,41 @@ def test_stdcnet():
     with pytest.raises(AssertionError):
         # STDC backbone constraints.
         STDCNet(
-            stdc_type='STDCNet3',
+            stdc_type="STDCNet3",
             in_channels=3,
             channels=(32, 64, 256, 512, 1024),
-            bottleneck_type='cat',
+            bottleneck_type="cat",
             num_convs=4,
-            norm_cfg=dict(type='BN', requires_grad=True),
-            act_cfg=dict(type='ReLU'),
-            with_final_conv=False)
+            norm_cfg=dict(type="BN", requires_grad=True),
+            act_cfg=dict(type="ReLU"),
+            with_final_conv=False,
+        )
 
     with pytest.raises(AssertionError):
         # STDC bottleneck type constraints.
         STDCNet(
-            stdc_type='STDCNet1',
+            stdc_type="STDCNet1",
             in_channels=3,
             channels=(32, 64, 256, 512, 1024),
-            bottleneck_type='dog',
+            bottleneck_type="dog",
             num_convs=4,
-            norm_cfg=dict(type='BN', requires_grad=True),
-            act_cfg=dict(type='ReLU'),
-            with_final_conv=False)
+            norm_cfg=dict(type="BN", requires_grad=True),
+            act_cfg=dict(type="ReLU"),
+            with_final_conv=False,
+        )
 
     with pytest.raises(AssertionError):
         # STDC channels length constraints.
         STDCNet(
-            stdc_type='STDCNet1',
+            stdc_type="STDCNet1",
             in_channels=3,
             channels=(16, 32, 64, 256, 512, 1024),
-            bottleneck_type='cat',
+            bottleneck_type="cat",
             num_convs=4,
-            norm_cfg=dict(type='BN', requires_grad=True),
-            act_cfg=dict(type='ReLU'),
-            with_final_conv=False)
+            norm_cfg=dict(type="BN", requires_grad=True),
+            act_cfg=dict(type="ReLU"),
+            with_final_conv=False,
+        )
 
 
 def test_feature_fusion_module():

@@ -1,10 +1,8 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 import pytest
 import torch
-
 from mmseg.models.backbones import MixVisionTransformer
-from mmseg.models.backbones.mit import (EfficientMultiheadAttention, MixFFN,
-                                        TransformerEncoderLayer)
+from mmseg.models.backbones.mit import EfficientMultiheadAttention, MixFFN, TransformerEncoderLayer
 
 
 def test_mit():
@@ -15,8 +13,7 @@ def test_mit():
     # Test normal input
     H, W = (224, 224)
     temp = torch.randn((1, 3, H, W))
-    model = MixVisionTransformer(
-        embed_dims=32, num_heads=[1, 2, 5, 8], out_indices=(0, 1, 2, 3))
+    model = MixVisionTransformer(embed_dims=32, num_heads=[1, 2, 5, 8], out_indices=(0, 1, 2, 3))
     model.init_weights()
     outs = model(temp)
     assert outs[0].shape == (1, 32, H // 4, W // 4)
@@ -58,8 +55,7 @@ def test_mit():
     assert out.shape == (1, token_len, 64)
 
     # Test TransformerEncoderLayer with checkpoint forward
-    block = TransformerEncoderLayer(
-        embed_dims=64, num_heads=4, feedforward_channels=256, with_cp=True)
+    block = TransformerEncoderLayer(embed_dims=64, num_heads=4, feedforward_channels=256, with_cp=True)
     assert block.with_cp
     x = torch.randn(1, 56 * 56, 64)
     x_out = block(x, (56, 56))
@@ -67,7 +63,7 @@ def test_mit():
 
 
 def test_mit_init():
-    path = 'PATH_THAT_DO_NOT_EXIST'
+    path = "PATH_THAT_DO_NOT_EXIST"
     # Test all combinations of pretrained and init_cfg
     # pretrained=None, init_cfg=None
     model = MixVisionTransformer(pretrained=None, init_cfg=None)
@@ -76,9 +72,8 @@ def test_mit_init():
 
     # pretrained=None
     # init_cfg loads pretrain from an non-existent file
-    model = MixVisionTransformer(
-        pretrained=None, init_cfg=dict(type='Pretrained', checkpoint=path))
-    assert model.init_cfg == dict(type='Pretrained', checkpoint=path)
+    model = MixVisionTransformer(pretrained=None, init_cfg=dict(type="Pretrained", checkpoint=path))
+    assert model.init_cfg == dict(type="Pretrained", checkpoint=path)
     # Test loading a checkpoint from an non-existent file
     with pytest.raises(OSError):
         model.init_weights()
@@ -92,7 +87,7 @@ def test_mit_init():
     # pretrained loads pretrain from an non-existent file
     # init_cfg=None
     model = MixVisionTransformer(pretrained=path, init_cfg=None)
-    assert model.init_cfg == dict(type='Pretrained', checkpoint=path)
+    assert model.init_cfg == dict(type="Pretrained", checkpoint=path)
     # Test loading a checkpoint from an non-existent file
     with pytest.raises(OSError):
         model.init_weights()
@@ -100,8 +95,7 @@ def test_mit_init():
     # pretrained loads pretrain from an non-existent file
     # init_cfg loads pretrain from an non-existent file
     with pytest.raises(AssertionError):
-        MixVisionTransformer(
-            pretrained=path, init_cfg=dict(type='Pretrained', checkpoint=path))
+        MixVisionTransformer(pretrained=path, init_cfg=dict(type="Pretrained", checkpoint=path))
     with pytest.raises(AssertionError):
         MixVisionTransformer(pretrained=path, init_cfg=123)
 
@@ -113,8 +107,7 @@ def test_mit_init():
     # pretrain=123, whose type is unsupported
     # init_cfg loads pretrain from an non-existent file
     with pytest.raises(AssertionError):
-        MixVisionTransformer(
-            pretrained=123, init_cfg=dict(type='Pretrained', checkpoint=path))
+        MixVisionTransformer(pretrained=123, init_cfg=dict(type="Pretrained", checkpoint=path))
 
     # pretrain=123, whose type is unsupported
     # init_cfg=123, whose type is unsupported

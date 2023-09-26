@@ -1,13 +1,12 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 import pytest
 import torch
-
 from mmseg.models.decode_heads import PSPHead
+
 from .utils import _conv_has_norm, to_cuda
 
 
 def test_psp_head():
-
     with pytest.raises(AssertionError):
         # pool_scales must be list|tuple
         PSPHead(in_channels=4, channels=2, num_classes=19, pool_scales=1)
@@ -17,16 +16,11 @@ def test_psp_head():
     assert not _conv_has_norm(head, sync_bn=False)
 
     # test with norm_cfg
-    head = PSPHead(
-        in_channels=4,
-        channels=2,
-        num_classes=19,
-        norm_cfg=dict(type='SyncBN'))
+    head = PSPHead(in_channels=4, channels=2, num_classes=19, norm_cfg=dict(type="SyncBN"))
     assert _conv_has_norm(head, sync_bn=True)
 
     inputs = [torch.randn(1, 4, 23, 23)]
-    head = PSPHead(
-        in_channels=4, channels=2, num_classes=19, pool_scales=(1, 2, 3))
+    head = PSPHead(in_channels=4, channels=2, num_classes=19, pool_scales=(1, 2, 3))
     if torch.cuda.is_available():
         head, inputs = to_cuda(head, inputs)
     assert head.psp_modules[0][0].output_size == 1

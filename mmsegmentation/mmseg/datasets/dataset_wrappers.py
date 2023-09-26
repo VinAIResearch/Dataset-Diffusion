@@ -4,7 +4,6 @@ import copy
 from typing import List, Optional, Sequence, Union
 
 from mmengine.dataset import ConcatDataset, force_full_init
-
 from mmseg.registry import DATASETS, TRANSFORMS
 
 
@@ -23,11 +22,13 @@ class MultiImageMixDataset:
             be skip pipeline. Default to None.
     """
 
-    def __init__(self,
-                 dataset: Union[ConcatDataset, dict],
-                 pipeline: Sequence[dict],
-                 skip_type_keys: Optional[List[str]] = None,
-                 lazy_init: bool = False) -> None:
+    def __init__(
+        self,
+        dataset: Union[ConcatDataset, dict],
+        pipeline: Sequence[dict],
+        skip_type_keys: Optional[List[str]] = None,
+        lazy_init: bool = False,
+    ) -> None:
         assert isinstance(pipeline, collections.abc.Sequence)
 
         if isinstance(dataset, dict):
@@ -36,25 +37,23 @@ class MultiImageMixDataset:
             self.dataset = dataset
         else:
             raise TypeError(
-                'elements in datasets sequence should be config or '
-                f'`ConcatDataset` instance, but got {type(dataset)}')
+                "elements in datasets sequence should be config or "
+                f"`ConcatDataset` instance, but got {type(dataset)}"
+            )
 
         if skip_type_keys is not None:
-            assert all([
-                isinstance(skip_type_key, str)
-                for skip_type_key in skip_type_keys
-            ])
+            assert all([isinstance(skip_type_key, str) for skip_type_key in skip_type_keys])
         self._skip_type_keys = skip_type_keys
 
         self.pipeline = []
         self.pipeline_types = []
         for transform in pipeline:
             if isinstance(transform, dict):
-                self.pipeline_types.append(transform['type'])
+                self.pipeline_types.append(transform["type"])
                 transform = TRANSFORMS.build(transform)
                 self.pipeline.append(transform)
             else:
-                raise TypeError('pipeline must be a dict')
+                raise TypeError("pipeline must be a dict")
 
         self._metainfo = self.dataset.metainfo
         self.num_samples = len(self.dataset)
@@ -99,25 +98,21 @@ class MultiImageMixDataset:
 
     def __getitem__(self, idx):
         results = copy.deepcopy(self.dataset[idx])
-        for (transform, transform_type) in zip(self.pipeline,
-                                               self.pipeline_types):
-            if self._skip_type_keys is not None and \
-                    transform_type in self._skip_type_keys:
+        for transform, transform_type in zip(self.pipeline, self.pipeline_types):
+            if self._skip_type_keys is not None and transform_type in self._skip_type_keys:
                 continue
 
-            if hasattr(transform, 'get_indices'):
+            if hasattr(transform, "get_indices"):
                 indices = transform.get_indices(self.dataset)
                 if not isinstance(indices, collections.abc.Sequence):
                     indices = [indices]
-                mix_results = [
-                    copy.deepcopy(self.dataset[index]) for index in indices
-                ]
-                results['mix_results'] = mix_results
+                mix_results = [copy.deepcopy(self.dataset[index]) for index in indices]
+                results["mix_results"] = mix_results
 
             results = transform(results)
 
-            if 'mix_results' in results:
-                results.pop('mix_results')
+            if "mix_results" in results:
+                results.pop("mix_results")
 
         return results
 
@@ -130,7 +125,5 @@ class MultiImageMixDataset:
             skip_type_keys (list[str], optional): Sequence of type
                 string to be skip pipeline.
         """
-        assert all([
-            isinstance(skip_type_key, str) for skip_type_key in skip_type_keys
-        ])
+        assert all([isinstance(skip_type_key, str) for skip_type_key in skip_type_keys])
         self._skip_type_keys = skip_type_keys

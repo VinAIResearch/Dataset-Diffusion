@@ -12,15 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import inspect
-import math
+import logging
 from typing import Any, Callable, Dict, List, Optional, Union
 
-import numpy as np
 import torch
-from torch.nn import functional as F
 from diffusers import StableDiffusionPipeline
-from diffusers.utils import logging, replace_example_docstring
 from diffusers.loaders import TextualInversionLoaderMixin
 from diffusers.pipelines.stable_diffusion import StableDiffusionPipelineOutput
 
@@ -29,6 +25,8 @@ logger = logging.get_logger(__name__)
 
 EXAMPLE_DOC_STRING = """
 """
+
+
 class StableDiffusionClassPromptsPipeline(StableDiffusionPipeline):
     def _encode_prompt(
         self,
@@ -92,7 +90,7 @@ class StableDiffusionClassPromptsPipeline(StableDiffusionPipeline):
         # duplicate text embeddings for each generation per prompt, using mps friendly method
         prompt_embeds = prompt_embeds.repeat(1, num_images_per_prompt, 1)
         prompt_embeds = prompt_embeds.view(bs_embed * num_images_per_prompt, seq_len, -1)
-        
+
         if class_prompts_embeds is None:
             # textual inversion: procecss multi-vector tokens if necessary
             if isinstance(self, TextualInversionLoaderMixin):

@@ -5,13 +5,12 @@ import torch
 import torch.nn as nn
 from mmcv.cnn import ConvModule, build_activation_layer, build_norm_layer
 from mmengine.model import BaseModule
-from torch import Tensor
-
 from mmseg.models.decode_heads.decode_head import BaseDecodeHead
 from mmseg.models.losses import accuracy
 from mmseg.models.utils import resize
 from mmseg.registry import MODELS
 from mmseg.utils import OptConfigType, SampleList
+from torch import Tensor
 
 
 class BasePIDHead(BaseModule):
@@ -28,12 +27,14 @@ class BasePIDHead(BaseModule):
             Default: None.
     """
 
-    def __init__(self,
-                 in_channels: int,
-                 channels: int,
-                 norm_cfg: OptConfigType = dict(type='BN'),
-                 act_cfg: OptConfigType = dict(type='ReLU', inplace=True),
-                 init_cfg: OptConfigType = None):
+    def __init__(
+        self,
+        in_channels: int,
+        channels: int,
+        norm_cfg: OptConfigType = dict(type="BN"),
+        act_cfg: OptConfigType = dict(type="ReLU", inplace=True),
+        init_cfg: OptConfigType = None,
+    ):
         super().__init__(init_cfg)
         self.conv = ConvModule(
             in_channels,
@@ -42,7 +43,8 @@ class BasePIDHead(BaseModule):
             padding=1,
             norm_cfg=norm_cfg,
             act_cfg=act_cfg,
-            order=('norm', 'act', 'conv'))
+            order=("norm", "act", "conv"),
+        )
         _, self.norm = build_norm_layer(norm_cfg, num_features=channels)
         self.act = build_activation_layer(act_cfg)
 
@@ -77,23 +79,18 @@ class PIDHead(BaseDecodeHead):
             Default: dict(type='ReLU', inplace=True).
     """
 
-    def __init__(self,
-                 in_channels: int,
-                 channels: int,
-                 num_classes: int,
-                 norm_cfg: OptConfigType = dict(type='BN'),
-                 act_cfg: OptConfigType = dict(type='ReLU', inplace=True),
-                 **kwargs):
-        super().__init__(
-            in_channels,
-            channels,
-            num_classes=num_classes,
-            norm_cfg=norm_cfg,
-            act_cfg=act_cfg,
-            **kwargs)
+    def __init__(
+        self,
+        in_channels: int,
+        channels: int,
+        num_classes: int,
+        norm_cfg: OptConfigType = dict(type="BN"),
+        act_cfg: OptConfigType = dict(type="ReLU", inplace=True),
+        **kwargs
+    ):
+        super().__init__(in_channels, channels, num_classes=num_classes, norm_cfg=norm_cfg, act_cfg=act_cfg, **kwargs)
         self.i_head = BasePIDHead(in_channels, channels, norm_cfg, act_cfg)
-        self.p_head = BasePIDHead(in_channels // 2, channels, norm_cfg,
-                                  act_cfg)
+        self.p_head = BasePIDHead(in_channels // 2, channels, norm_cfg, act_cfg)
         self.d_head = BasePIDHead(
             in_channels // 2,
             in_channels // 4,
@@ -105,16 +102,12 @@ class PIDHead(BaseDecodeHead):
     def init_weights(self):
         for m in self.modules():
             if isinstance(m, nn.Conv2d):
-                nn.init.kaiming_normal_(
-                    m.weight, mode='fan_out', nonlinearity='relu')
+                nn.init.kaiming_normal_(m.weight, mode="fan_out", nonlinearity="relu")
             elif isinstance(m, nn.BatchNorm2d):
                 nn.init.constant_(m.weight, 1)
                 nn.init.constant_(m.bias, 0)
 
-    def forward(
-            self,
-            inputs: Union[Tensor,
-                          Tuple[Tensor]]) -> Union[Tensor, Tuple[Tensor]]:
+    def forward(self, inputs: Union[Tensor, Tuple[Tensor]]) -> Union[Tensor, Tuple[Tensor]]:
         """Forward function.
         Args:
             inputs (Tensor | tuple[Tensor]): Input tensor or tuple of
@@ -138,46 +131,26 @@ class PIDHead(BaseDecodeHead):
             return self.i_head(inputs, self.cls_seg)
 
     def _stack_batch_gt(self, batch_data_samples: SampleList) -> Tuple[Tensor]:
-        gt_semantic_segs = [
-            data_sample.gt_sem_seg.data for data_sample in batch_data_samples
-        ]
-        gt_edge_segs = [
-            data_sample.gt_edge_map.data for data_sample in batch_data_samples
-        ]
+        gt_semantic_segs = [data_sample.gt_sem_seg.data for data_sample in batch_data_samples]
+        gt_edge_segs = [data_sample.gt_edge_map.data for data_sample in batch_data_samples]
         gt_sem_segs = torch.stack(gt_semantic_segs, dim=0)
         gt_edge_segs = torch.stack(gt_edge_segs, dim=0)
         return gt_sem_segs, gt_edge_segs
 
-    def loss_by_feat(self, seg_logits: Tuple[Tensor],
-                     batch_data_samples: SampleList) -> dict:
+    def loss_by_feat(self, seg_logits: Tuple[Tensor], batch_data_samples: SampleList) -> dict:
         loss = dict()
         p_logit, i_logit, d_logit = seg_logits
         sem_label, bd_label = self._stack_batch_gt(batch_data_samples)
-        p_logit = resize(
-            input=p_logit,
-            size=sem_label.shape[2:],
-            mode='bilinear',
-            align_corners=self.align_corners)
-        i_logit = resize(
-            input=i_logit,
-            size=sem_label.shape[2:],
-            mode='bilinear',
-            align_corners=self.align_corners)
-        d_logit = resize(
-            input=d_logit,
-            size=bd_label.shape[2:],
-            mode='bilinear',
-            align_corners=self.align_corners)
+        p_logit = resize(input=p_logit, size=sem_label.shape[2:], mode="bilinear", align_corners=self.align_corners)
+        i_logit = resize(input=i_logit, size=sem_label.shape[2:], mode="bilinear", align_corners=self.align_corners)
+        d_logit = resize(input=d_logit, size=bd_label.shape[2:], mode="bilinear", align_corners=self.align_corners)
         sem_label = sem_label.squeeze(1)
         bd_label = bd_label.squeeze(1)
-        loss['loss_sem_p'] = self.loss_decode[0](
-            p_logit, sem_label, ignore_index=self.ignore_index)
-        loss['loss_sem_i'] = self.loss_decode[1](i_logit, sem_label)
-        loss['loss_bd'] = self.loss_decode[2](d_logit, bd_label)
+        loss["loss_sem_p"] = self.loss_decode[0](p_logit, sem_label, ignore_index=self.ignore_index)
+        loss["loss_sem_i"] = self.loss_decode[1](i_logit, sem_label)
+        loss["loss_bd"] = self.loss_decode[2](d_logit, bd_label)
         filler = torch.ones_like(sem_label) * self.ignore_index
-        sem_bd_label = torch.where(
-            torch.sigmoid(d_logit[:, 0, :, :]) > 0.8, sem_label, filler)
-        loss['loss_sem_bd'] = self.loss_decode[3](i_logit, sem_bd_label)
-        loss['acc_seg'] = accuracy(
-            i_logit, sem_label, ignore_index=self.ignore_index)
+        sem_bd_label = torch.where(torch.sigmoid(d_logit[:, 0, :, :]) > 0.8, sem_label, filler)
+        loss["loss_sem_bd"] = self.loss_decode[3](i_logit, sem_bd_label)
+        loss["acc_seg"] = accuracy(i_logit, sem_label, ignore_index=self.ignore_index)
         return loss

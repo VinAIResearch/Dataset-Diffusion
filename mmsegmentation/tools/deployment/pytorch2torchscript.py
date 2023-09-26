@@ -7,40 +7,41 @@ import torch._C
 import torch.serialization
 from mmengine import Config
 from mmengine.runner import load_checkpoint
+from mmseg.models import build_segmentor
 from torch import nn
 
-from mmseg.models import build_segmentor
 
 torch.manual_seed(3)
 
 
 def digit_version(version_str):
     digit_version = []
-    for x in version_str.split('.'):
+    for x in version_str.split("."):
         if x.isdigit():
             digit_version.append(int(x))
-        elif x.find('rc') != -1:
-            patch_version = x.split('rc')
+        elif x.find("rc") != -1:
+            patch_version = x.split("rc")
             digit_version.append(int(patch_version[0]) - 1)
             digit_version.append(int(patch_version[1]))
     return digit_version
 
 
 def check_torch_version():
-    torch_minimum_version = '1.8.0'
+    torch_minimum_version = "1.8.0"
     torch_version = digit_version(torch.__version__)
 
-    assert (torch_version >= digit_version(torch_minimum_version)), \
-        f'Torch=={torch.__version__} is not support for converting to ' \
-        f'torchscript. Please install pytorch>={torch_minimum_version}.'
+    assert torch_version >= digit_version(torch_minimum_version), (
+        f"Torch=={torch.__version__} is not support for converting to "
+        f"torchscript. Please install pytorch>={torch_minimum_version}."
+    )
 
 
 def _convert_batchnorm(module):
     module_output = module
     if isinstance(module, torch.nn.SyncBatchNorm):
-        module_output = torch.nn.BatchNorm2d(module.num_features, module.eps,
-                                             module.momentum, module.affine,
-                                             module.track_running_stats)
+        module_output = torch.nn.BatchNorm2d(
+            module.num_features, module.eps, module.momentum, module.affine, module.track_running_stats
+        )
         if module.affine:
             module_output.weight.data = module.weight.data.clone().detach()
             module_output.bias.data = module.bias.data.clone().detach()
@@ -68,29 +69,27 @@ def _demo_mm_inputs(input_shape, num_classes):
     (N, C, H, W) = input_shape
     rng = np.random.RandomState(0)
     imgs = rng.rand(*input_shape)
-    segs = rng.randint(
-        low=0, high=num_classes - 1, size=(N, 1, H, W)).astype(np.uint8)
-    img_metas = [{
-        'img_shape': (H, W, C),
-        'ori_shape': (H, W, C),
-        'pad_shape': (H, W, C),
-        'filename': '<demo>.png',
-        'scale_factor': 1.0,
-        'flip': False,
-    } for _ in range(N)]
+    segs = rng.randint(low=0, high=num_classes - 1, size=(N, 1, H, W)).astype(np.uint8)
+    img_metas = [
+        {
+            "img_shape": (H, W, C),
+            "ori_shape": (H, W, C),
+            "pad_shape": (H, W, C),
+            "filename": "<demo>.png",
+            "scale_factor": 1.0,
+            "flip": False,
+        }
+        for _ in range(N)
+    ]
     mm_inputs = {
-        'imgs': torch.FloatTensor(imgs).requires_grad_(True),
-        'img_metas': img_metas,
-        'gt_semantic_seg': torch.LongTensor(segs)
+        "imgs": torch.FloatTensor(imgs).requires_grad_(True),
+        "img_metas": img_metas,
+        "gt_semantic_seg": torch.LongTensor(segs),
     }
     return mm_inputs
 
 
-def pytorch2libtorch(model,
-                     input_shape,
-                     show=False,
-                     output_file='tmp.pt',
-                     verify=False):
+def pytorch2libtorch(model, input_shape, show=False, output_file="tmp.pt", verify=False):
     """Export Pytorch model to TorchScript model and verify the outputs are
     same between Pytorch and TorchScript.
 
@@ -111,7 +110,7 @@ def pytorch2libtorch(model,
 
     mm_inputs = _demo_mm_inputs(input_shape, num_classes)
 
-    imgs = mm_inputs.pop('imgs')
+    imgs = mm_inputs.pop("imgs")
 
     # replace the original forword with forward_dummy
     model.forward = model.forward_dummy
@@ -126,30 +125,22 @@ def pytorch2libtorch(model,
         print(traced_model.graph)
 
     traced_model.save(output_file)
-    print(f'Successfully exported TorchScript model: {output_file}')
+    print(f"Successfully exported TorchScript model: {output_file}")
 
 
 def parse_args():
-    parser = argparse.ArgumentParser(
-        description='Convert MMSeg to TorchScript')
-    parser.add_argument('config', help='test config file path')
-    parser.add_argument('--checkpoint', help='checkpoint file', default=None)
-    parser.add_argument(
-        '--show', action='store_true', help='show TorchScript graph')
-    parser.add_argument(
-        '--verify', action='store_true', help='verify the TorchScript model')
-    parser.add_argument('--output-file', type=str, default='tmp.pt')
-    parser.add_argument(
-        '--shape',
-        type=int,
-        nargs='+',
-        default=[512, 512],
-        help='input image size (height, width)')
+    parser = argparse.ArgumentParser(description="Convert MMSeg to TorchScript")
+    parser.add_argument("config", help="test config file path")
+    parser.add_argument("--checkpoint", help="checkpoint file", default=None)
+    parser.add_argument("--show", action="store_true", help="show TorchScript graph")
+    parser.add_argument("--verify", action="store_true", help="verify the TorchScript model")
+    parser.add_argument("--output-file", type=str, default="tmp.pt")
+    parser.add_argument("--shape", type=int, nargs="+", default=[512, 512], help="input image size (height, width)")
     args = parser.parse_args()
     return args
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     args = parse_args()
     check_torch_version()
 
@@ -161,25 +152,19 @@ if __name__ == '__main__':
             3,
         ) + tuple(args.shape)
     else:
-        raise ValueError('invalid input shape')
+        raise ValueError("invalid input shape")
 
     cfg = Config.fromfile(args.config)
     cfg.model.pretrained = None
 
     # build the model and load checkpoint
     cfg.model.train_cfg = None
-    segmentor = build_segmentor(
-        cfg.model, train_cfg=None, test_cfg=cfg.get('test_cfg'))
+    segmentor = build_segmentor(cfg.model, train_cfg=None, test_cfg=cfg.get("test_cfg"))
     # convert SyncBN to BN
     segmentor = _convert_batchnorm(segmentor)
 
     if args.checkpoint:
-        load_checkpoint(segmentor, args.checkpoint, map_location='cpu')
+        load_checkpoint(segmentor, args.checkpoint, map_location="cpu")
 
     # convert the PyTorch model to LibTorch model
-    pytorch2libtorch(
-        segmentor,
-        input_shape,
-        show=args.show,
-        output_file=args.output_file,
-        verify=args.verify)
+    pytorch2libtorch(segmentor, input_shape, show=args.show, output_file=args.output_file, verify=args.verify)

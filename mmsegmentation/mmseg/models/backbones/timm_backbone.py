@@ -6,7 +6,6 @@ except ImportError:
 
 from mmengine.model import BaseModule
 from mmengine.registry import MODELS as MMENGINE_MODELS
-
 from mmseg.registry import MODELS
 
 
@@ -30,16 +29,16 @@ class TIMMBackbone(BaseModule):
         model_name,
         features_only=True,
         pretrained=True,
-        checkpoint_path='',
+        checkpoint_path="",
         in_channels=3,
         init_cfg=None,
         **kwargs,
     ):
         if timm is None:
-            raise RuntimeError('timm is not installed')
+            raise RuntimeError("timm is not installed")
         super().__init__(init_cfg)
-        if 'norm_layer' in kwargs:
-            kwargs['norm_layer'] = MMENGINE_MODELS.get(kwargs['norm_layer'])
+        if "norm_layer" in kwargs:
+            kwargs["norm_layer"] = MMENGINE_MODELS.get(kwargs["norm_layer"])
         self.timm_model = timm.create_model(
             model_name=model_name,
             features_only=features_only,

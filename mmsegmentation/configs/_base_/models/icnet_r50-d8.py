@@ -1,19 +1,20 @@
 # model settings
-norm_cfg = dict(type='SyncBN', requires_grad=True)
+norm_cfg = dict(type="SyncBN", requires_grad=True)
 data_preprocessor = dict(
-    type='SegDataPreProcessor',
+    type="SegDataPreProcessor",
     mean=[123.675, 116.28, 103.53],
     std=[58.395, 57.12, 57.375],
     bgr_to_rgb=True,
     pad_val=0,
-    seg_pad_val=255)
+    seg_pad_val=255,
+)
 model = dict(
-    type='EncoderDecoder',
+    type="EncoderDecoder",
     data_preprocessor=data_preprocessor,
     backbone=dict(
-        type='ICNet',
+        type="ICNet",
         backbone_cfg=dict(
-            type='ResNetV1c',
+            type="ResNetV1c",
             in_channels=3,
             depth=50,
             num_stages=4,
@@ -22,8 +23,9 @@ model = dict(
             strides=(1, 2, 1, 1),
             norm_cfg=norm_cfg,
             norm_eval=False,
-            style='pytorch',
-            contract_dilation=True),
+            style="pytorch",
+            contract_dilation=True,
+        ),
         in_channels=3,
         layer_channels=(512, 2048),
         light_branch_middle_channels=32,
@@ -32,14 +34,9 @@ model = dict(
         norm_cfg=norm_cfg,
         align_corners=False,
     ),
-    neck=dict(
-        type='ICNeck',
-        in_channels=(64, 256, 256),
-        out_channels=128,
-        norm_cfg=norm_cfg,
-        align_corners=False),
+    neck=dict(type="ICNeck", in_channels=(64, 256, 256), out_channels=128, norm_cfg=norm_cfg, align_corners=False),
     decode_head=dict(
-        type='FCNHead',
+        type="FCNHead",
         in_channels=128,
         channels=128,
         num_convs=1,
@@ -49,11 +46,11 @@ model = dict(
         norm_cfg=norm_cfg,
         concat_input=False,
         align_corners=False,
-        loss_decode=dict(
-            type='CrossEntropyLoss', use_sigmoid=False, loss_weight=1.0)),
+        loss_decode=dict(type="CrossEntropyLoss", use_sigmoid=False, loss_weight=1.0),
+    ),
     auxiliary_head=[
         dict(
-            type='FCNHead',
+            type="FCNHead",
             in_channels=128,
             channels=128,
             num_convs=1,
@@ -62,10 +59,10 @@ model = dict(
             norm_cfg=norm_cfg,
             concat_input=False,
             align_corners=False,
-            loss_decode=dict(
-                type='CrossEntropyLoss', use_sigmoid=False, loss_weight=0.4)),
+            loss_decode=dict(type="CrossEntropyLoss", use_sigmoid=False, loss_weight=0.4),
+        ),
         dict(
-            type='FCNHead',
+            type="FCNHead",
             in_channels=128,
             channels=128,
             num_convs=1,
@@ -74,9 +71,10 @@ model = dict(
             norm_cfg=norm_cfg,
             concat_input=False,
             align_corners=False,
-            loss_decode=dict(
-                type='CrossEntropyLoss', use_sigmoid=False, loss_weight=0.4)),
+            loss_decode=dict(type="CrossEntropyLoss", use_sigmoid=False, loss_weight=0.4),
+        ),
     ],
     # model training and testing settings
     train_cfg=dict(),
-    test_cfg=dict(mode='whole'))
+    test_cfg=dict(mode="whole"),
+)

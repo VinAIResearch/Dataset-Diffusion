@@ -2,9 +2,9 @@
 from abc import ABCMeta, abstractmethod
 from typing import List
 
+from mmseg.utils import ConfigType
 from torch import Tensor
 
-from mmseg.utils import ConfigType
 from .decode_head import BaseDecodeHead
 
 
@@ -20,8 +20,9 @@ class BaseCascadeDecodeHead(BaseDecodeHead, metaclass=ABCMeta):
         """Placeholder of forward function."""
         pass
 
-    def loss(self, inputs: List[Tensor], prev_output: Tensor,
-             batch_data_samples: List[dict], train_cfg: ConfigType) -> Tensor:
+    def loss(
+        self, inputs: List[Tensor], prev_output: Tensor, batch_data_samples: List[dict], train_cfg: ConfigType
+    ) -> Tensor:
         """Forward function for training.
 
         Args:
@@ -40,8 +41,7 @@ class BaseCascadeDecodeHead(BaseDecodeHead, metaclass=ABCMeta):
 
         return losses
 
-    def predict(self, inputs: List[Tensor], prev_output: Tensor,
-                batch_img_metas: List[dict], tese_cfg: ConfigType):
+    def predict(self, inputs: List[Tensor], prev_output: Tensor, batch_img_metas: List[dict], tese_cfg: ConfigType):
         """Forward function for testing.
 
         Args:

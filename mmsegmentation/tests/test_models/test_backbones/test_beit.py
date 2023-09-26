@@ -1,8 +1,8 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 import pytest
 import torch
-
 from mmseg.models.backbones.beit import BEiT
+
 from .utils import check_norm_state
 
 
@@ -18,7 +18,7 @@ def test_beit_backbone():
 
     with pytest.raises(TypeError):
         # out_indices must be int ,list or tuple
-        model = BEiT(out_indices=1.)
+        model = BEiT(out_indices=1.0)
 
     with pytest.raises(AssertionError):
         # The length of img_size tuple must be lower than 3.
@@ -30,7 +30,7 @@ def test_beit_backbone():
 
     # Test img_size isinstance tuple
     imgs = torch.randn(1, 3, 224, 224)
-    model = BEiT(img_size=(224, ))
+    model = BEiT(img_size=(224,))
     model.init_weights()
     model(imgs)
 
@@ -115,7 +115,7 @@ def test_beit_backbone():
 
 
 def test_beit_init():
-    path = 'PATH_THAT_DO_NOT_EXIST'
+    path = "PATH_THAT_DO_NOT_EXIST"
     # Test all combinations of pretrained and init_cfg
     # pretrained=None, init_cfg=None
     model = BEiT(pretrained=None, init_cfg=None)
@@ -124,9 +124,8 @@ def test_beit_init():
 
     # pretrained=None
     # init_cfg loads pretrain from an non-existent file
-    model = BEiT(
-        pretrained=None, init_cfg=dict(type='Pretrained', checkpoint=path))
-    assert model.init_cfg == dict(type='Pretrained', checkpoint=path)
+    model = BEiT(pretrained=None, init_cfg=dict(type="Pretrained", checkpoint=path))
+    assert model.init_cfg == dict(type="Pretrained", checkpoint=path)
     # Test loading a checkpoint from an non-existent file
     with pytest.raises(OSError):
         model.init_weights()
@@ -134,15 +133,13 @@ def test_beit_init():
     # test resize_rel_pos_embed
     value = torch.randn(732, 16)
     ckpt = {
-        'state_dict': {
-            'layers.0.attn.relative_position_index': 0,
-            'layers.0.attn.relative_position_bias_table': value
-        }
+        "state_dict": {"layers.0.attn.relative_position_index": 0, "layers.0.attn.relative_position_bias_table": value}
     }
     model = BEiT(img_size=(512, 512))
     # If scipy is installed, this AttributeError would not be raised.
     from mmengine.utils import is_installed
-    if not is_installed('scipy'):
+
+    if not is_installed("scipy"):
         with pytest.raises(AttributeError):
             model.resize_rel_pos_embed(ckpt)
 
@@ -155,7 +152,7 @@ def test_beit_init():
     # pretrained loads pretrain from an non-existent file
     # init_cfg=None
     model = BEiT(pretrained=path, init_cfg=None)
-    assert model.init_cfg == dict(type='Pretrained', checkpoint=path)
+    assert model.init_cfg == dict(type="Pretrained", checkpoint=path)
     # Test loading a checkpoint from an non-existent file
     with pytest.raises(OSError):
         model.init_weights()
@@ -163,8 +160,7 @@ def test_beit_init():
     # pretrained loads pretrain from an non-existent file
     # init_cfg loads pretrain from an non-existent file
     with pytest.raises(AssertionError):
-        model = BEiT(
-            pretrained=path, init_cfg=dict(type='Pretrained', checkpoint=path))
+        model = BEiT(pretrained=path, init_cfg=dict(type="Pretrained", checkpoint=path))
     with pytest.raises(AssertionError):
         model = BEiT(pretrained=path, init_cfg=123)
 
@@ -176,8 +172,7 @@ def test_beit_init():
     # pretrain=123, whose type is unsupported
     # init_cfg loads pretrain from an non-existent file
     with pytest.raises(AssertionError):
-        model = BEiT(
-            pretrained=123, init_cfg=dict(type='Pretrained', checkpoint=path))
+        model = BEiT(pretrained=123, init_cfg=dict(type="Pretrained", checkpoint=path))
 
     # pretrain=123, whose type is unsupported
     # init_cfg=123, whose type is unsupported

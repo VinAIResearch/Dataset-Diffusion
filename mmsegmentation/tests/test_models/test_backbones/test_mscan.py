@@ -1,16 +1,12 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 import torch
-
 from mmseg.models.backbones import MSCAN
-from mmseg.models.backbones.mscan import (MSCAAttention, MSCASpatialAttention,
-                                          OverlapPatchEmbed, StemConv)
+from mmseg.models.backbones.mscan import MSCAAttention, MSCASpatialAttention, OverlapPatchEmbed, StemConv
 
 
 def test_mscan_backbone():
     # Test MSCAN Standard Forward
-    model = MSCAN(
-        embed_dims=[8, 16, 32, 64],
-        norm_cfg=dict(type='BN', requires_grad=True))
+    model = MSCAN(embed_dims=[8, 16, 32, 64], norm_cfg=dict(type="BN", requires_grad=True))
     model.init_weights()
     model.train()
     batch_size = 2
@@ -32,8 +28,7 @@ def test_mscan_backbone():
 
 
 def test_mscan_overlap_patch_embed_module():
-    x_overlap_patch_embed = OverlapPatchEmbed(
-        norm_cfg=dict(type='BN', requires_grad=True))
+    x_overlap_patch_embed = OverlapPatchEmbed(norm_cfg=dict(type="BN", requires_grad=True))
     assert x_overlap_patch_embed.proj.in_channels == 3
     assert x_overlap_patch_embed.norm.weight.shape == torch.Size([768])
     x = torch.randn(2, 3, 16, 32)
@@ -60,7 +55,7 @@ def test_mscan_attention_module():
 
 
 def test_mscan_stem_module():
-    x_stem = StemConv(8, 8, norm_cfg=dict(type='BN', requires_grad=True))
+    x_stem = StemConv(8, 8, norm_cfg=dict(type="BN", requires_grad=True))
     assert x_stem.proj[0].weight.shape[0] == 4
     assert x_stem.proj[-1].weight.shape[0] == 8
     x = torch.randn(2, 8, 16, 32)

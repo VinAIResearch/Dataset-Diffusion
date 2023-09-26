@@ -1,10 +1,9 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 import torch
-from torch.nn.modules import GroupNorm
-from torch.nn.modules.batchnorm import _BatchNorm
-
 from mmseg.models.backbones.resnet import BasicBlock, Bottleneck
 from mmseg.models.backbones.resnext import Bottleneck as BottleneckX
+from torch.nn.modules import GroupNorm
+from torch.nn.modules.batchnorm import _BatchNorm
 
 
 def is_block(modules):
@@ -23,11 +22,9 @@ def is_norm(modules):
 
 def all_zeros(modules):
     """Check if the weight(and bias) is all zero."""
-    weight_zero = torch.allclose(modules.weight.data,
-                                 torch.zeros_like(modules.weight.data))
-    if hasattr(modules, 'bias'):
-        bias_zero = torch.allclose(modules.bias.data,
-                                   torch.zeros_like(modules.bias.data))
+    weight_zero = torch.allclose(modules.weight.data, torch.zeros_like(modules.weight.data))
+    if hasattr(modules, "bias"):
+        bias_zero = torch.allclose(modules.bias.data, torch.zeros_like(modules.bias.data))
     else:
         bias_zero = True
 

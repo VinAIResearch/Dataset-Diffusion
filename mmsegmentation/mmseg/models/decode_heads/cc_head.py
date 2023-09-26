@@ -1,8 +1,9 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 import torch
-
 from mmseg.registry import MODELS
+
 from .fcn_head import FCNHead
+
 
 try:
     from mmcv.ops import CrissCrossAttention
@@ -24,8 +25,7 @@ class CCHead(FCNHead):
 
     def __init__(self, recurrence=2, **kwargs):
         if CrissCrossAttention is None:
-            raise RuntimeError('Please install mmcv-full for '
-                               'CrissCrossAttention ops')
+            raise RuntimeError("Please install mmcv-full for " "CrissCrossAttention ops")
         super().__init__(num_convs=2, **kwargs)
         self.recurrence = recurrence
         self.cca = CrissCrossAttention(self.channels)

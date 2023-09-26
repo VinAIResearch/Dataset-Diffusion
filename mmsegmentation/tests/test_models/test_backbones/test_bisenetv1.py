@@ -1,17 +1,14 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 import pytest
 import torch
-
 from mmseg.models.backbones import BiSeNetV1
-from mmseg.models.backbones.bisenetv1 import (AttentionRefinementModule,
-                                              ContextPath, FeatureFusionModule,
-                                              SpatialPath)
+from mmseg.models.backbones.bisenetv1 import AttentionRefinementModule, ContextPath, FeatureFusionModule, SpatialPath
 
 
 def test_bisenetv1_backbone():
     # Test BiSeNetV1 Standard Forward
     backbone_cfg = dict(
-        type='ResNet',
+        type="ResNet",
         in_channels=3,
         depth=18,
         num_stages=4,
@@ -19,8 +16,9 @@ def test_bisenetv1_backbone():
         dilations=(1, 1, 1, 1),
         strides=(1, 2, 2, 2),
         norm_eval=False,
-        style='pytorch',
-        contract_dilation=True)
+        style="pytorch",
+        contract_dilation=True,
+    )
     model = BiSeNetV1(in_channels=3, backbone_cfg=backbone_cfg)
     model.init_weights()
     model.train()
@@ -44,17 +42,11 @@ def test_bisenetv1_backbone():
 
     with pytest.raises(AssertionError):
         # BiSeNetV1 spatial path channel constraints.
-        BiSeNetV1(
-            backbone_cfg=backbone_cfg,
-            in_channels=3,
-            spatial_channels=(16, 16, 16))
+        BiSeNetV1(backbone_cfg=backbone_cfg, in_channels=3, spatial_channels=(16, 16, 16))
 
     with pytest.raises(AssertionError):
         # BiSeNetV1 context path constraints.
-        BiSeNetV1(
-            backbone_cfg=backbone_cfg,
-            in_channels=3,
-            context_channels=(16, 32, 64, 128))
+        BiSeNetV1(backbone_cfg=backbone_cfg, in_channels=3, context_channels=(16, 32, 64, 128))
 
 
 def test_bisenetv1_spatial_path():
@@ -65,7 +57,7 @@ def test_bisenetv1_spatial_path():
 
 def test_bisenetv1_context_path():
     backbone_cfg = dict(
-        type='ResNet',
+        type="ResNet",
         in_channels=3,
         depth=50,
         num_stages=4,
@@ -73,13 +65,13 @@ def test_bisenetv1_context_path():
         dilations=(1, 1, 1, 1),
         strides=(1, 2, 2, 2),
         norm_eval=False,
-        style='pytorch',
-        contract_dilation=True)
+        style="pytorch",
+        contract_dilation=True,
+    )
 
     with pytest.raises(AssertionError):
         # BiSeNetV1 context path constraints.
-        ContextPath(
-            backbone_cfg=backbone_cfg, context_channels=(16, 32, 64, 128))
+        ContextPath(backbone_cfg=backbone_cfg, context_channels=(16, 32, 64, 128))
 
 
 def test_bisenetv1_attention_refinement_module():

@@ -1,17 +1,18 @@
-from diffusers.models.attention_processor import Attention
-from torch.nn import functional as F
-import torch
 import abc
-from typing import Any, Callable, Dict, List, Optional, Union
+import math
+from typing import List
+
+import torch
+from diffusers.models.attention_processor import Attention
+
 
 class AttentionControl(abc.ABC):
-    
     def step_callback(self, x_t):
         return x_t
-    
+
     def between_steps(self):
         return
-    
+
     @abc.abstractmethod
     def forward(self, attn, heads: int, is_cross: bool, place_in_unet: str):
         raise NotImplementedError
@@ -21,14 +22,14 @@ class AttentionControl(abc.ABC):
         if is_cross:
             attn = self.forward(attn, heads, is_cross, place_in_unet)
         else:
-            attn[h // 2:] = self.forward(attn[h // 2:], heads, is_cross, place_in_unet)
+            attn[h // 2 :] = self.forward(attn[h // 2 :], heads, is_cross, place_in_unet)
         self.cur_att_layer += 1
         if self.cur_att_layer == self.num_att_layers:
             self.cur_att_layer = 0
             self.between_steps()
             self.cur_step += 1
         return attn
-    
+
     def reset(self):
         self.cur_step = 0
         self.cur_att_layer = 0
@@ -37,17 +38,16 @@ class AttentionControl(abc.ABC):
         self.cur_step = 0
         self.num_att_layers = -1
         self.cur_att_layer = 0
-    
-class AttentionStoreClassPrompts(AttentionControl):
 
+
+class AttentionStoreClassPrompts(AttentionControl):
     @staticmethod
     def get_empty_store():
-        return {"down_cross": [], "mid_cross": [], "up_cross": [],
-                "down_self": [],  "mid_self": [],  "up_self": []}
+        return {"down_cross": [], "mid_cross": [], "up_cross": [], "down_self": [], "mid_self": [], "up_self": []}
 
     def forward(self, attn, heads, is_cross: bool, place_in_unet: str):
         if self.start <= self.cur_step <= self.end:
-            if attn.shape[1] <= 64 ** 2:  # avoid memory overhead
+            if attn.shape[1] <= 64**2:  # avoid memory overhead
                 spatial_res = int(math.sqrt(attn.shape[1]))
                 attn_store = attn.reshape(-1, heads, spatial_res, spatial_res, attn.shape[-1])
                 key = f"{place_in_unet}_{'cross' if is_cross else 'self'}"
@@ -67,7 +67,9 @@ class AttentionStoreClassPrompts(AttentionControl):
     def get_average_attention(self):
         start = max(0, self.start)
         end = min(self.cur_step, self.end + 1)
-        average_attention = {key: [item / (end - start) for item in self.attention_store[key]] for key in self.attention_store}
+        average_attention = {
+            key: [item / (end - start) for item in self.attention_store[key]] for key in self.attention_store
+        }
         return average_attention
 
     def reset(self):
@@ -82,8 +84,8 @@ class AttentionStoreClassPrompts(AttentionControl):
         self.start = start
         self.end = end
 
-class StoredAttnClassPromptsProcessor:
 
+class StoredAttnClassPromptsProcessor:
     def __init__(self, attnstore, place_in_unet):
         super().__init__()
         self.attnstore = attnstore
@@ -105,10 +107,10 @@ class StoredAttnClassPromptsProcessor:
         value = attn.head_to_batch_dim(value)
 
         if is_cross:
-            cross_key = key[attn.heads * batch_size:, ] # get token of the class text
-            key = key[:attn.heads * batch_size]
-            cross_query = query[attn.heads * batch_size // 2:]
-            value = value[:attn.heads * batch_size]
+            cross_key = key[attn.heads * batch_size :,]  # get token of the class text
+            key = key[: attn.heads * batch_size]
+            cross_query = query[attn.heads * batch_size // 2 :]
+            value = value[: attn.heads * batch_size]
             cross_attention_probs = attn.get_attention_scores(cross_query, cross_key, None)
             self.attnstore(cross_attention_probs, attn.heads, True, self.place_in_unet)
 
@@ -126,8 +128,14 @@ class StoredAttnClassPromptsProcessor:
 
         return hidden_states
 
-  
-def aggregate_attention(attention_store: AttentionStoreClassPrompts, res: int, is_cross: bool, from_where: List[str] = ["up", "down", "mid"], **kwargs):
+
+def aggregate_attention(
+    attention_store: AttentionStoreClassPrompts,
+    res: int,
+    is_cross: bool,
+    from_where: List[str] = ["up", "down", "mid"],
+    **kwargs,
+):
     out = []
     attention_maps = attention_store.get_average_attention(**kwargs)
     for location in from_where:
@@ -139,7 +147,6 @@ def aggregate_attention(attention_store: AttentionStoreClassPrompts, res: int, i
 
 
 def register_attention_control(model, controller, processor, **kwargs):
-
     attn_procs = {}
     cross_att_count = 0
     for name in model.unet.attn_processors.keys():
@@ -153,9 +160,7 @@ def register_attention_control(model, controller, processor, **kwargs):
             continue
 
         cross_att_count += 1
-        attn_procs[name] = processor(
-            attnstore=controller, place_in_unet=place_in_unet, **kwargs
-        )
+        attn_procs[name] = processor(attnstore=controller, place_in_unet=place_in_unet, **kwargs)
 
     model.unet.set_attn_processor(attn_procs)
     controller.num_att_layers = cross_att_count

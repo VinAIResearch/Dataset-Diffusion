@@ -1,14 +1,13 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 import pytest
 import torch
-
 from mmseg.models.backbones import MobileNetV3
 
 
 def test_mobilenet_v3():
     with pytest.raises(AssertionError):
         # check invalid arch
-        MobileNetV3('big')
+        MobileNetV3("big")
 
     with pytest.raises(AssertionError):
         # check invalid reduction_factor
@@ -40,7 +39,7 @@ def test_mobilenet_v3():
     assert feat[2].shape == (2, 576, 7, 7)
 
     # Test MobileNetV3 with arch = 'large'
-    model = MobileNetV3(arch='large', out_indices=(1, 3, 16))
+    model = MobileNetV3(arch="large", out_indices=(1, 3, 16))
     model.init_weights()
     model.train()
 

@@ -9,11 +9,10 @@ import numpy as np
 from mmcv.transforms.base import BaseTransform
 from mmcv.transforms.utils import cache_randomness
 from mmengine.utils import is_tuple_of
-from numpy import random
-from scipy.ndimage import gaussian_filter
-
 from mmseg.datasets.dataset_wrappers import MultiImageMixDataset
 from mmseg.registry import TRANSFORMS
+from numpy import random
+from scipy.ndimage import gaussian_filter
 
 
 @TRANSFORMS.register_module()
@@ -53,34 +52,29 @@ class ResizeToMultiple(BaseTransform):
             dict: Resized results, 'img_shape', 'pad_shape' keys are updated.
         """
         # Align image to multiple of size divisor.
-        img = results['img']
+        img = results["img"]
         img = mmcv.imresize_to_multiple(
             img,
             self.size_divisor,
             scale_factor=1,
-            interpolation=self.interpolation
-            if self.interpolation else 'bilinear')
+            interpolation=self.interpolation if self.interpolation else "bilinear",
+        )
 
-        results['img'] = img
-        results['img_shape'] = img.shape[:2]
-        results['pad_shape'] = img.shape[:2]
+        results["img"] = img
+        results["img_shape"] = img.shape[:2]
+        results["pad_shape"] = img.shape[:2]
 
         # Align segmentation map to multiple of size divisor.
-        for key in results.get('seg_fields', []):
+        for key in results.get("seg_fields", []):
             gt_seg = results[key]
-            gt_seg = mmcv.imresize_to_multiple(
-                gt_seg,
-                self.size_divisor,
-                scale_factor=1,
-                interpolation='nearest')
+            gt_seg = mmcv.imresize_to_multiple(gt_seg, self.size_divisor, scale_factor=1, interpolation="nearest")
             results[key] = gt_seg
 
         return results
 
     def __repr__(self):
         repr_str = self.__class__.__name__
-        repr_str += (f'(size_divisor={self.size_divisor}, '
-                     f'interpolation={self.interpolation})')
+        repr_str += f"(size_divisor={self.size_divisor}, " f"interpolation={self.interpolation})"
         return repr_str
 
 
@@ -119,7 +113,7 @@ class Rerange(BaseTransform):
             dict: Reranged results.
         """
 
-        img = results['img']
+        img = results["img"]
         img_min_value = np.min(img)
         img_max_value = np.max(img)
 
@@ -128,13 +122,13 @@ class Rerange(BaseTransform):
         img = (img - img_min_value) / (img_max_value - img_min_value)
         # rerange to [min_value, max_value]
         img = img * (self.max_value - self.min_value) + self.min_value
-        results['img'] = img
+        results["img"] = img
 
         return results
 
     def __repr__(self):
         repr_str = self.__class__.__name__
-        repr_str += f'(min_value={self.min_value}, max_value={self.max_value})'
+        repr_str += f"(min_value={self.min_value}, max_value={self.max_value})"
         return repr_str
 
 
@@ -177,17 +171,16 @@ class CLAHE(BaseTransform):
             dict: Processed results.
         """
 
-        for i in range(results['img'].shape[2]):
-            results['img'][:, :, i] = mmcv.clahe(
-                np.array(results['img'][:, :, i], dtype=np.uint8),
-                self.clip_limit, self.tile_grid_size)
+        for i in range(results["img"].shape[2]):
+            results["img"][:, :, i] = mmcv.clahe(
+                np.array(results["img"][:, :, i], dtype=np.uint8), self.clip_limit, self.tile_grid_size
+            )
 
         return results
 
     def __repr__(self):
         repr_str = self.__class__.__name__
-        repr_str += f'(clip_limit={self.clip_limit}, '\
-                    f'tile_grid_size={self.tile_grid_size})'
+        repr_str += f"(clip_limit={self.clip_limit}, " f"tile_grid_size={self.tile_grid_size})"
         return repr_str
 
 
@@ -216,15 +209,12 @@ class RandomCrop(BaseTransform):
         ignore_index (int): The label index to be ignored. Default: 255
     """
 
-    def __init__(self,
-                 crop_size: Union[int, Tuple[int, int]],
-                 cat_max_ratio: float = 1.,
-                 ignore_index: int = 255):
+    def __init__(self, crop_size: Union[int, Tuple[int, int]], cat_max_ratio: float = 1.0, ignore_index: int = 255):
         super().__init__()
         assert isinstance(crop_size, int) or (
             isinstance(crop_size, tuple) and len(crop_size) == 2
-        ), 'The expected crop_size is an integer, or a tuple containing two '
-        'intergers'
+        ), "The expected crop_size is an integer, or a tuple containing two "
+        "intergers"
 
         if isinstance(crop_size, int):
             crop_size = (crop_size, crop_size)
@@ -263,16 +253,15 @@ class RandomCrop(BaseTransform):
 
             return crop_y1, crop_y2, crop_x1, crop_x2
 
-        img = results['img']
+        img = results["img"]
         crop_bbox = generate_crop_bbox(img)
-        if self.cat_max_ratio < 1.:
+        if self.cat_max_ratio < 1.0:
             # Repeat 10 times
             for _ in range(10):
-                seg_temp = self.crop(results['gt_seg_map'], crop_bbox)
+                seg_temp = self.crop(results["gt_seg_map"], crop_bbox)
                 labels, cnt = np.unique(seg_temp, return_counts=True)
                 cnt = cnt[labels != self.ignore_index]
-                if len(cnt) > 1 and np.max(cnt) / np.sum(
-                        cnt) < self.cat_max_ratio:
+                if len(cnt) > 1 and np.max(cnt) / np.sum(cnt) < self.cat_max_ratio:
                     break
                 crop_bbox = generate_crop_bbox(img)
 
@@ -305,22 +294,22 @@ class RandomCrop(BaseTransform):
                 updated according to crop size.
         """
 
-        img = results['img']
+        img = results["img"]
         crop_bbox = self.crop_bbox(results)
 
         # crop the image
         img = self.crop(img, crop_bbox)
 
         # crop semantic seg
-        for key in results.get('seg_fields', []):
+        for key in results.get("seg_fields", []):
             results[key] = self.crop(results[key], crop_bbox)
 
-        results['img'] = img
-        results['img_shape'] = img.shape[:2]
+        results["img"] = img
+        results["img_shape"] = img.shape[:2]
         return results
 
     def __repr__(self):
-        return self.__class__.__name__ + f'(crop_size={self.crop_size})'
+        return self.__class__.__name__ + f"(crop_size={self.crop_size})"
 
 
 @TRANSFORMS.register_module()
@@ -352,22 +341,15 @@ class RandomRotate(BaseTransform):
             rotated image. Default: False
     """
 
-    def __init__(self,
-                 prob,
-                 degree,
-                 pad_val=0,
-                 seg_pad_val=255,
-                 center=None,
-                 auto_bound=False):
+    def __init__(self, prob, degree, pad_val=0, seg_pad_val=255, center=None, auto_bound=False):
         self.prob = prob
         assert prob >= 0 and prob <= 1
         if isinstance(degree, (float, int)):
-            assert degree > 0, f'degree {degree} should be positive'
+            assert degree > 0, f"degree {degree} should be positive"
             self.degree = (-degree, degree)
         else:
             self.degree = degree
-        assert len(self.degree) == 2, f'degree {self.degree} should be a ' \
-                                      f'tuple of (min, max)'
+        assert len(self.degree) == 2, f"degree {self.degree} should be a " f"tuple of (min, max)"
         self.pal_val = pad_val
         self.seg_pad_val = seg_pad_val
         self.center = center
@@ -375,8 +357,7 @@ class RandomRotate(BaseTransform):
 
     @cache_randomness
     def generate_degree(self):
-        return np.random.rand() < self.prob, np.random.uniform(
-            min(*self.degree), max(*self.degree))
+        return np.random.rand() < self.prob, np.random.uniform(min(*self.degree), max(*self.degree))
 
     def transform(self, results: dict) -> dict:
         """Call function to rotate image, semantic segmentation maps.
@@ -391,32 +372,32 @@ class RandomRotate(BaseTransform):
         rotate, degree = self.generate_degree()
         if rotate:
             # rotate image
-            results['img'] = mmcv.imrotate(
-                results['img'],
-                angle=degree,
-                border_value=self.pal_val,
-                center=self.center,
-                auto_bound=self.auto_bound)
+            results["img"] = mmcv.imrotate(
+                results["img"], angle=degree, border_value=self.pal_val, center=self.center, auto_bound=self.auto_bound
+            )
 
             # rotate segs
-            for key in results.get('seg_fields', []):
+            for key in results.get("seg_fields", []):
                 results[key] = mmcv.imrotate(
                     results[key],
                     angle=degree,
                     border_value=self.seg_pad_val,
                     center=self.center,
                     auto_bound=self.auto_bound,
-                    interpolation='nearest')
+                    interpolation="nearest",
+                )
         return results
 
     def __repr__(self):
         repr_str = self.__class__.__name__
-        repr_str += f'(prob={self.prob}, ' \
-                    f'degree={self.degree}, ' \
-                    f'pad_val={self.pal_val}, ' \
-                    f'seg_pad_val={self.seg_pad_val}, ' \
-                    f'center={self.center}, ' \
-                    f'auto_bound={self.auto_bound})'
+        repr_str += (
+            f"(prob={self.prob}, "
+            f"degree={self.degree}, "
+            f"pad_val={self.pal_val}, "
+            f"seg_pad_val={self.seg_pad_val}, "
+            f"center={self.center}, "
+            f"auto_bound={self.auto_bound})"
+        )
         return repr_str
 
 
@@ -462,7 +443,7 @@ class RGB2Gray(BaseTransform):
         Returns:
             dict: Result dict with grayscale image.
         """
-        img = results['img']
+        img = results["img"]
         assert len(img.shape) == 3
         assert img.shape[2] == len(self.weights)
         weights = np.array(self.weights).reshape((1, 1, -1))
@@ -472,15 +453,14 @@ class RGB2Gray(BaseTransform):
         else:
             img = img.repeat(self.out_channels, axis=2)
 
-        results['img'] = img
-        results['img_shape'] = img.shape
+        results["img"] = img
+        results["img_shape"] = img.shape
 
         return results
 
     def __repr__(self):
         repr_str = self.__class__.__name__
-        repr_str += f'(out_channels={self.out_channels}, ' \
-                    f'weights={self.weights})'
+        repr_str += f"(out_channels={self.out_channels}, " f"weights={self.weights})"
         return repr_str
 
 
@@ -506,8 +486,7 @@ class AdjustGamma(BaseTransform):
         assert gamma > 0
         self.gamma = gamma
         inv_gamma = 1.0 / gamma
-        self.table = np.array([(i / 255.0)**inv_gamma * 255
-                               for i in np.arange(256)]).astype('uint8')
+        self.table = np.array([(i / 255.0) ** inv_gamma * 255 for i in np.arange(256)]).astype("uint8")
 
     def transform(self, results: dict) -> dict:
         """Call function to process the image with gamma correction.
@@ -519,13 +498,12 @@ class AdjustGamma(BaseTransform):
             dict: Processed results.
         """
 
-        results['img'] = mmcv.lut_transform(
-            np.array(results['img'], dtype=np.uint8), self.table)
+        results["img"] = mmcv.lut_transform(np.array(results["img"], dtype=np.uint8), self.table)
 
         return results
 
     def __repr__(self):
-        return self.__class__.__name__ + f'(gamma={self.gamma})'
+        return self.__class__.__name__ + f"(gamma={self.gamma})"
 
 
 @TRANSFORMS.register_module()
@@ -556,14 +534,13 @@ class SegRescale(BaseTransform):
         Returns:
             dict: Result dict with semantic segmentation map scaled.
         """
-        for key in results.get('seg_fields', []):
+        for key in results.get("seg_fields", []):
             if self.scale_factor != 1:
-                results[key] = mmcv.imrescale(
-                    results[key], self.scale_factor, interpolation='nearest')
+                results[key] = mmcv.imrescale(results[key], self.scale_factor, interpolation="nearest")
         return results
 
     def __repr__(self):
-        return self.__class__.__name__ + f'(scale_factor={self.scale_factor})'
+        return self.__class__.__name__ + f"(scale_factor={self.scale_factor})"
 
 
 @TRANSFORMS.register_module()
@@ -595,20 +572,19 @@ class PhotoMetricDistortion(BaseTransform):
         hue_delta (int): delta of hue.
     """
 
-    def __init__(self,
-                 brightness_delta: int = 32,
-                 contrast_range: Sequence[float] = (0.5, 1.5),
-                 saturation_range: Sequence[float] = (0.5, 1.5),
-                 hue_delta: int = 18):
+    def __init__(
+        self,
+        brightness_delta: int = 32,
+        contrast_range: Sequence[float] = (0.5, 1.5),
+        saturation_range: Sequence[float] = (0.5, 1.5),
+        hue_delta: int = 18,
+    ):
         self.brightness_delta = brightness_delta
         self.contrast_lower, self.contrast_upper = contrast_range
         self.saturation_lower, self.saturation_upper = saturation_range
         self.hue_delta = hue_delta
 
-    def convert(self,
-                img: np.ndarray,
-                alpha: int = 1,
-                beta: int = 0) -> np.ndarray:
+    def convert(self, img: np.ndarray, alpha: int = 1, beta: int = 0) -> np.ndarray:
         """Multiple with alpha and add beat with clip.
 
         Args:
@@ -636,10 +612,7 @@ class PhotoMetricDistortion(BaseTransform):
         """
 
         if random.randint(2):
-            return self.convert(
-                img,
-                beta=random.uniform(-self.brightness_delta,
-                                    self.brightness_delta))
+            return self.convert(img, beta=random.uniform(-self.brightness_delta, self.brightness_delta))
         return img
 
     def contrast(self, img: np.ndarray) -> np.ndarray:
@@ -652,9 +625,7 @@ class PhotoMetricDistortion(BaseTransform):
         """
 
         if random.randint(2):
-            return self.convert(
-                img,
-                alpha=random.uniform(self.contrast_lower, self.contrast_upper))
+            return self.convert(img, alpha=random.uniform(self.contrast_lower, self.contrast_upper))
         return img
 
     def saturation(self, img: np.ndarray) -> np.ndarray:
@@ -669,9 +640,8 @@ class PhotoMetricDistortion(BaseTransform):
         if random.randint(2):
             img = mmcv.bgr2hsv(img)
             img[:, :, 1] = self.convert(
-                img[:, :, 1],
-                alpha=random.uniform(self.saturation_lower,
-                                     self.saturation_upper))
+                img[:, :, 1], alpha=random.uniform(self.saturation_lower, self.saturation_upper)
+            )
             img = mmcv.hsv2bgr(img)
         return img
 
@@ -686,9 +656,7 @@ class PhotoMetricDistortion(BaseTransform):
 
         if random.randint(2):
             img = mmcv.bgr2hsv(img)
-            img[:, :,
-                0] = (img[:, :, 0].astype(int) +
-                      random.randint(-self.hue_delta, self.hue_delta)) % 180
+            img[:, :, 0] = (img[:, :, 0].astype(int) + random.randint(-self.hue_delta, self.hue_delta)) % 180
             img = mmcv.hsv2bgr(img)
         return img
 
@@ -702,7 +670,7 @@ class PhotoMetricDistortion(BaseTransform):
             dict: Result dict with images distorted.
         """
 
-        img = results['img']
+        img = results["img"]
         # random brightness
         img = self.brightness(img)
 
@@ -722,17 +690,19 @@ class PhotoMetricDistortion(BaseTransform):
         if mode == 0:
             img = self.contrast(img)
 
-        results['img'] = img
+        results["img"] = img
         return results
 
     def __repr__(self):
         repr_str = self.__class__.__name__
-        repr_str += (f'(brightness_delta={self.brightness_delta}, '
-                     f'contrast_range=({self.contrast_lower}, '
-                     f'{self.contrast_upper}), '
-                     f'saturation_range=({self.saturation_lower}, '
-                     f'{self.saturation_upper}), '
-                     f'hue_delta={self.hue_delta})')
+        repr_str += (
+            f"(brightness_delta={self.brightness_delta}, "
+            f"contrast_range=({self.contrast_lower}, "
+            f"{self.contrast_upper}), "
+            f"saturation_range=({self.saturation_lower}, "
+            f"{self.saturation_upper}), "
+            f"hue_delta={self.hue_delta})"
+        )
         return repr_str
 
 
@@ -773,26 +743,18 @@ class RandomCutOut(BaseTransform):
             If seg_fill_in is None, skip. Default: None.
     """
 
-    def __init__(self,
-                 prob,
-                 n_holes,
-                 cutout_shape=None,
-                 cutout_ratio=None,
-                 fill_in=(0, 0, 0),
-                 seg_fill_in=None):
-
+    def __init__(self, prob, n_holes, cutout_shape=None, cutout_ratio=None, fill_in=(0, 0, 0), seg_fill_in=None):
         assert 0 <= prob and prob <= 1
-        assert (cutout_shape is None) ^ (cutout_ratio is None), \
-            'Either cutout_shape or cutout_ratio should be specified.'
-        assert (isinstance(cutout_shape, (list, tuple))
-                or isinstance(cutout_ratio, (list, tuple)))
+        assert (cutout_shape is None) ^ (
+            cutout_ratio is None
+        ), "Either cutout_shape or cutout_ratio should be specified."
+        assert isinstance(cutout_shape, (list, tuple)) or isinstance(cutout_ratio, (list, tuple))
         if isinstance(n_holes, tuple):
             assert len(n_holes) == 2 and 0 <= n_holes[0] < n_holes[1]
         else:
             n_holes = (n_holes, n_holes)
         if seg_fill_in is not None:
-            assert (isinstance(seg_fill_in, int) and 0 <= seg_fill_in
-                    and seg_fill_in <= 255)
+            assert isinstance(seg_fill_in, int) and 0 <= seg_fill_in and seg_fill_in <= 255
         self.prob = prob
         self.n_holes = n_holes
         self.fill_in = fill_in
@@ -810,7 +772,7 @@ class RandomCutOut(BaseTransform):
     def generate_patches(self, results):
         cutout = self.do_cutout()
 
-        h, w, _ = results['img'].shape
+        h, w, _ = results["img"].shape
         if cutout:
             n_holes = np.random.randint(self.n_holes[0], self.n_holes[1] + 1)
         else:
@@ -826,10 +788,9 @@ class RandomCutOut(BaseTransform):
 
     def transform(self, results: dict) -> dict:
         """Call function to drop some regions of image."""
-        cutout, n_holes, x1_lst, y1_lst, index_lst = self.generate_patches(
-            results)
+        cutout, n_holes, x1_lst, y1_lst, index_lst = self.generate_patches(results)
         if cutout:
-            h, w, c = results['img'].shape
+            h, w, c = results["img"].shape
             for i in range(n_holes):
                 x1 = x1_lst[i]
                 y1 = y1_lst[i]
@@ -842,22 +803,21 @@ class RandomCutOut(BaseTransform):
 
                 x2 = np.clip(x1 + cutout_w, 0, w)
                 y2 = np.clip(y1 + cutout_h, 0, h)
-                results['img'][y1:y2, x1:x2, :] = self.fill_in
+                results["img"][y1:y2, x1:x2, :] = self.fill_in
 
                 if self.seg_fill_in is not None:
-                    for key in results.get('seg_fields', []):
+                    for key in results.get("seg_fields", []):
                         results[key][y1:y2, x1:x2] = self.seg_fill_in
 
         return results
 
     def __repr__(self):
         repr_str = self.__class__.__name__
-        repr_str += f'(prob={self.prob}, '
-        repr_str += f'n_holes={self.n_holes}, '
-        repr_str += (f'cutout_ratio={self.candidates}, ' if self.with_ratio
-                     else f'cutout_shape={self.candidates}, ')
-        repr_str += f'fill_in={self.fill_in}, '
-        repr_str += f'seg_fill_in={self.seg_fill_in})'
+        repr_str += f"(prob={self.prob}, "
+        repr_str += f"n_holes={self.n_holes}, "
+        repr_str += f"cutout_ratio={self.candidates}, " if self.with_ratio else f"cutout_shape={self.candidates}, "
+        repr_str += f"fill_in={self.fill_in}, "
+        repr_str += f"seg_fill_in={self.seg_fill_in})"
         return repr_str
 
 
@@ -888,28 +848,27 @@ class RandomRotFlip(BaseTransform):
         self.flip_prob = flip_prob
         assert 0 <= rotate_prob <= 1 and 0 <= flip_prob <= 1
         if isinstance(degree, (float, int)):
-            assert degree > 0, f'degree {degree} should be positive'
+            assert degree > 0, f"degree {degree} should be positive"
             self.degree = (-degree, degree)
         else:
             self.degree = degree
-        assert len(self.degree) == 2, f'degree {self.degree} should be a ' \
-                                      f'tuple of (min, max)'
+        assert len(self.degree) == 2, f"degree {self.degree} should be a " f"tuple of (min, max)"
 
     def random_rot_flip(self, results: dict) -> dict:
         k = np.random.randint(0, 4)
-        results['img'] = np.rot90(results['img'], k)
-        for key in results.get('seg_fields', []):
+        results["img"] = np.rot90(results["img"], k)
+        for key in results.get("seg_fields", []):
             results[key] = np.rot90(results[key], k)
         axis = np.random.randint(0, 2)
-        results['img'] = np.flip(results['img'], axis=axis).copy()
-        for key in results.get('seg_fields', []):
+        results["img"] = np.flip(results["img"], axis=axis).copy()
+        for key in results.get("seg_fields", []):
             results[key] = np.flip(results[key], axis=axis).copy()
         return results
 
     def random_rotate(self, results: dict) -> dict:
         angle = np.random.uniform(min(*self.degree), max(*self.degree))
-        results['img'] = mmcv.imrotate(results['img'], angle=angle)
-        for key in results.get('seg_fields', []):
+        results["img"] = mmcv.imrotate(results["img"], angle=angle)
+        for key in results.get("seg_fields", []):
             results[key] = mmcv.imrotate(results[key], angle=angle)
         return results
 
@@ -933,9 +892,7 @@ class RandomRotFlip(BaseTransform):
 
     def __repr__(self):
         repr_str = self.__class__.__name__
-        repr_str += f'(rotate_prob={self.rotate_prob}, ' \
-                    f'flip_prob={self.flip_prob}, ' \
-                    f'degree={self.degree})'
+        repr_str += f"(rotate_prob={self.rotate_prob}, " f"flip_prob={self.flip_prob}, " f"degree={self.degree})"
         return repr_str
 
 
@@ -995,12 +952,7 @@ class RandomMosaic(BaseTransform):
         seg_pad_val (int): Pad value of segmentation map. Default: 255.
     """
 
-    def __init__(self,
-                 prob,
-                 img_scale=(640, 640),
-                 center_ratio_range=(0.5, 1.5),
-                 pad_val=0,
-                 seg_pad_val=255):
+    def __init__(self, prob, img_scale=(640, 640), center_ratio_range=(0.5, 1.5), pad_val=0, seg_pad_val=255):
         assert 0 <= prob and prob <= 1
         assert isinstance(img_scale, tuple)
         self.prob = prob
@@ -1044,10 +996,8 @@ class RandomMosaic(BaseTransform):
     @cache_randomness
     def generate_mosaic_center(self):
         # mosaic center x, y
-        center_x = int(
-            random.uniform(*self.center_ratio_range) * self.img_scale[1])
-        center_y = int(
-            random.uniform(*self.center_ratio_range) * self.img_scale[0])
+        center_x = int(random.uniform(*self.center_ratio_range) * self.img_scale[1])
+        center_y = int(random.uniform(*self.center_ratio_range) * self.img_scale[0])
         return center_x, center_y
 
     def _mosaic_transform_img(self, results: dict) -> dict:
@@ -1060,50 +1010,45 @@ class RandomMosaic(BaseTransform):
             dict: Updated result dict.
         """
 
-        assert 'mix_results' in results
-        if len(results['img'].shape) == 3:
-            c = results['img'].shape[2]
+        assert "mix_results" in results
+        if len(results["img"].shape) == 3:
+            c = results["img"].shape[2]
             mosaic_img = np.full(
-                (int(self.img_scale[0] * 2), int(self.img_scale[1] * 2), c),
-                self.pad_val,
-                dtype=results['img'].dtype)
+                (int(self.img_scale[0] * 2), int(self.img_scale[1] * 2), c), self.pad_val, dtype=results["img"].dtype
+            )
         else:
             mosaic_img = np.full(
-                (int(self.img_scale[0] * 2), int(self.img_scale[1] * 2)),
-                self.pad_val,
-                dtype=results['img'].dtype)
+                (int(self.img_scale[0] * 2), int(self.img_scale[1] * 2)), self.pad_val, dtype=results["img"].dtype
+            )
 
         # mosaic center x, y
         self.center_x, self.center_y = self.generate_mosaic_center()
         center_position = (self.center_x, self.center_y)
 
-        loc_strs = ('top_left', 'top_right', 'bottom_left', 'bottom_right')
+        loc_strs = ("top_left", "top_right", "bottom_left", "bottom_right")
         for i, loc in enumerate(loc_strs):
-            if loc == 'top_left':
+            if loc == "top_left":
                 result_patch = copy.deepcopy(results)
             else:
-                result_patch = copy.deepcopy(results['mix_results'][i - 1])
+                result_patch = copy.deepcopy(results["mix_results"][i - 1])
 
-            img_i = result_patch['img']
+            img_i = result_patch["img"]
             h_i, w_i = img_i.shape[:2]
             # keep_ratio resize
-            scale_ratio_i = min(self.img_scale[0] / h_i,
-                                self.img_scale[1] / w_i)
-            img_i = mmcv.imresize(
-                img_i, (int(w_i * scale_ratio_i), int(h_i * scale_ratio_i)))
+            scale_ratio_i = min(self.img_scale[0] / h_i, self.img_scale[1] / w_i)
+            img_i = mmcv.imresize(img_i, (int(w_i * scale_ratio_i), int(h_i * scale_ratio_i)))
 
             # compute the combine parameters
-            paste_coord, crop_coord = self._mosaic_combine(
-                loc, center_position, img_i.shape[:2][::-1])
+            paste_coord, crop_coord = self._mosaic_combine(loc, center_position, img_i.shape[:2][::-1])
             x1_p, y1_p, x2_p, y2_p = paste_coord
             x1_c, y1_c, x2_c, y2_c = crop_coord
 
             # crop and paste image
             mosaic_img[y1_p:y2_p, x1_p:x2_p] = img_i[y1_c:y2_c, x1_c:x2_c]
 
-        results['img'] = mosaic_img
-        results['img_shape'] = mosaic_img.shape
-        results['ori_shape'] = mosaic_img.shape
+        results["img"] = mosaic_img
+        results["img_shape"] = mosaic_img.shape
+        results["ori_shape"] = mosaic_img.shape
 
         return results
 
@@ -1117,49 +1062,43 @@ class RandomMosaic(BaseTransform):
             dict: Updated result dict.
         """
 
-        assert 'mix_results' in results
-        for key in results.get('seg_fields', []):
+        assert "mix_results" in results
+        for key in results.get("seg_fields", []):
             mosaic_seg = np.full(
-                (int(self.img_scale[0] * 2), int(self.img_scale[1] * 2)),
-                self.seg_pad_val,
-                dtype=results[key].dtype)
+                (int(self.img_scale[0] * 2), int(self.img_scale[1] * 2)), self.seg_pad_val, dtype=results[key].dtype
+            )
 
             # mosaic center x, y
             center_position = (self.center_x, self.center_y)
 
-            loc_strs = ('top_left', 'top_right', 'bottom_left', 'bottom_right')
+            loc_strs = ("top_left", "top_right", "bottom_left", "bottom_right")
             for i, loc in enumerate(loc_strs):
-                if loc == 'top_left':
+                if loc == "top_left":
                     result_patch = copy.deepcopy(results)
                 else:
-                    result_patch = copy.deepcopy(results['mix_results'][i - 1])
+                    result_patch = copy.deepcopy(results["mix_results"][i - 1])
 
                 gt_seg_i = result_patch[key]
                 h_i, w_i = gt_seg_i.shape[:2]
                 # keep_ratio resize
-                scale_ratio_i = min(self.img_scale[0] / h_i,
-                                    self.img_scale[1] / w_i)
+                scale_ratio_i = min(self.img_scale[0] / h_i, self.img_scale[1] / w_i)
                 gt_seg_i = mmcv.imresize(
-                    gt_seg_i,
-                    (int(w_i * scale_ratio_i), int(h_i * scale_ratio_i)),
-                    interpolation='nearest')
+                    gt_seg_i, (int(w_i * scale_ratio_i), int(h_i * scale_ratio_i)), interpolation="nearest"
+                )
 
                 # compute the combine parameters
-                paste_coord, crop_coord = self._mosaic_combine(
-                    loc, center_position, gt_seg_i.shape[:2][::-1])
+                paste_coord, crop_coord = self._mosaic_combine(loc, center_position, gt_seg_i.shape[:2][::-1])
                 x1_p, y1_p, x2_p, y2_p = paste_coord
                 x1_c, y1_c, x2_c, y2_c = crop_coord
 
                 # crop and paste image
-                mosaic_seg[y1_p:y2_p, x1_p:x2_p] = gt_seg_i[y1_c:y2_c,
-                                                            x1_c:x2_c]
+                mosaic_seg[y1_p:y2_p, x1_p:x2_p] = gt_seg_i[y1_c:y2_c, x1_c:x2_c]
 
             results[key] = mosaic_seg
 
         return results
 
-    def _mosaic_combine(self, loc: str, center_position_xy: Sequence[float],
-                        img_shape_wh: Sequence[int]) -> tuple:
+    def _mosaic_combine(self, loc: str, center_position_xy: Sequence[float], img_shape_wh: Sequence[int]) -> tuple:
         """Calculate global coordinate of mosaic image and local coordinate of
         cropped sub-image.
 
@@ -1177,57 +1116,57 @@ class RandomMosaic(BaseTransform):
                 - crop_coord (tuple): crop corner coordinate in mosaic image.
         """
 
-        assert loc in ('top_left', 'top_right', 'bottom_left', 'bottom_right')
-        if loc == 'top_left':
+        assert loc in ("top_left", "top_right", "bottom_left", "bottom_right")
+        if loc == "top_left":
             # index0 to top left part of image
-            x1, y1, x2, y2 = max(center_position_xy[0] - img_shape_wh[0], 0), \
-                             max(center_position_xy[1] - img_shape_wh[1], 0), \
-                             center_position_xy[0], \
-                             center_position_xy[1]
-            crop_coord = img_shape_wh[0] - (x2 - x1), img_shape_wh[1] - (
-                y2 - y1), img_shape_wh[0], img_shape_wh[1]
+            x1, y1, x2, y2 = (
+                max(center_position_xy[0] - img_shape_wh[0], 0),
+                max(center_position_xy[1] - img_shape_wh[1], 0),
+                center_position_xy[0],
+                center_position_xy[1],
+            )
+            crop_coord = img_shape_wh[0] - (x2 - x1), img_shape_wh[1] - (y2 - y1), img_shape_wh[0], img_shape_wh[1]
 
-        elif loc == 'top_right':
+        elif loc == "top_right":
             # index1 to top right part of image
-            x1, y1, x2, y2 = center_position_xy[0], \
-                             max(center_position_xy[1] - img_shape_wh[1], 0), \
-                             min(center_position_xy[0] + img_shape_wh[0],
-                                 self.img_scale[1] * 2), \
-                             center_position_xy[1]
-            crop_coord = 0, img_shape_wh[1] - (y2 - y1), min(
-                img_shape_wh[0], x2 - x1), img_shape_wh[1]
+            x1, y1, x2, y2 = (
+                center_position_xy[0],
+                max(center_position_xy[1] - img_shape_wh[1], 0),
+                min(center_position_xy[0] + img_shape_wh[0], self.img_scale[1] * 2),
+                center_position_xy[1],
+            )
+            crop_coord = 0, img_shape_wh[1] - (y2 - y1), min(img_shape_wh[0], x2 - x1), img_shape_wh[1]
 
-        elif loc == 'bottom_left':
+        elif loc == "bottom_left":
             # index2 to bottom left part of image
-            x1, y1, x2, y2 = max(center_position_xy[0] - img_shape_wh[0], 0), \
-                             center_position_xy[1], \
-                             center_position_xy[0], \
-                             min(self.img_scale[0] * 2, center_position_xy[1] +
-                                 img_shape_wh[1])
-            crop_coord = img_shape_wh[0] - (x2 - x1), 0, img_shape_wh[0], min(
-                y2 - y1, img_shape_wh[1])
+            x1, y1, x2, y2 = (
+                max(center_position_xy[0] - img_shape_wh[0], 0),
+                center_position_xy[1],
+                center_position_xy[0],
+                min(self.img_scale[0] * 2, center_position_xy[1] + img_shape_wh[1]),
+            )
+            crop_coord = img_shape_wh[0] - (x2 - x1), 0, img_shape_wh[0], min(y2 - y1, img_shape_wh[1])
 
         else:
             # index3 to bottom right part of image
-            x1, y1, x2, y2 = center_position_xy[0], \
-                             center_position_xy[1], \
-                             min(center_position_xy[0] + img_shape_wh[0],
-                                 self.img_scale[1] * 2), \
-                             min(self.img_scale[0] * 2, center_position_xy[1] +
-                                 img_shape_wh[1])
-            crop_coord = 0, 0, min(img_shape_wh[0],
-                                   x2 - x1), min(y2 - y1, img_shape_wh[1])
+            x1, y1, x2, y2 = (
+                center_position_xy[0],
+                center_position_xy[1],
+                min(center_position_xy[0] + img_shape_wh[0], self.img_scale[1] * 2),
+                min(self.img_scale[0] * 2, center_position_xy[1] + img_shape_wh[1]),
+            )
+            crop_coord = 0, 0, min(img_shape_wh[0], x2 - x1), min(y2 - y1, img_shape_wh[1])
 
         paste_coord = x1, y1, x2, y2
         return paste_coord, crop_coord
 
     def __repr__(self):
         repr_str = self.__class__.__name__
-        repr_str += f'(prob={self.prob}, '
-        repr_str += f'img_scale={self.img_scale}, '
-        repr_str += f'center_ratio_range={self.center_ratio_range}, '
-        repr_str += f'pad_val={self.pad_val}, '
-        repr_str += f'seg_pad_val={self.pad_val})'
+        repr_str += f"(prob={self.prob}, "
+        repr_str += f"img_scale={self.img_scale}, "
+        repr_str += f"center_ratio_range={self.center_ratio_range}, "
+        repr_str += f"pad_val={self.pad_val}, "
+        repr_str += f"seg_pad_val={self.pad_val})"
         return repr_str
 
 
@@ -1268,44 +1207,51 @@ class GenerateEdge(BaseTransform):
         Returns:
             dict: Result dict with edge mask.
         """
-        h, w = results['img_shape']
+        h, w = results["img_shape"]
         edge = np.zeros((h, w), dtype=np.uint8)
-        seg_map = results['gt_seg_map']
+        seg_map = results["gt_seg_map"]
 
         # down
         edge_down = edge[1:h, :]
-        edge_down[(seg_map[1:h, :] != seg_map[:h - 1, :])
-                  & (seg_map[1:h, :] != self.ignore_index) &
-                  (seg_map[:h - 1, :] != self.ignore_index)] = 1
+        edge_down[
+            (seg_map[1:h, :] != seg_map[: h - 1, :])
+            & (seg_map[1:h, :] != self.ignore_index)
+            & (seg_map[: h - 1, :] != self.ignore_index)
+        ] = 1
         # left
-        edge_left = edge[:, :w - 1]
-        edge_left[(seg_map[:, :w - 1] != seg_map[:, 1:w])
-                  & (seg_map[:, :w - 1] != self.ignore_index) &
-                  (seg_map[:, 1:w] != self.ignore_index)] = 1
+        edge_left = edge[:, : w - 1]
+        edge_left[
+            (seg_map[:, : w - 1] != seg_map[:, 1:w])
+            & (seg_map[:, : w - 1] != self.ignore_index)
+            & (seg_map[:, 1:w] != self.ignore_index)
+        ] = 1
         # up_left
-        edge_upleft = edge[:h - 1, :w - 1]
-        edge_upleft[(seg_map[:h - 1, :w - 1] != seg_map[1:h, 1:w])
-                    & (seg_map[:h - 1, :w - 1] != self.ignore_index) &
-                    (seg_map[1:h, 1:w] != self.ignore_index)] = 1
+        edge_upleft = edge[: h - 1, : w - 1]
+        edge_upleft[
+            (seg_map[: h - 1, : w - 1] != seg_map[1:h, 1:w])
+            & (seg_map[: h - 1, : w - 1] != self.ignore_index)
+            & (seg_map[1:h, 1:w] != self.ignore_index)
+        ] = 1
         # up_right
-        edge_upright = edge[:h - 1, 1:w]
-        edge_upright[(seg_map[:h - 1, 1:w] != seg_map[1:h, :w - 1])
-                     & (seg_map[:h - 1, 1:w] != self.ignore_index) &
-                     (seg_map[1:h, :w - 1] != self.ignore_index)] = 1
+        edge_upright = edge[: h - 1, 1:w]
+        edge_upright[
+            (seg_map[: h - 1, 1:w] != seg_map[1:h, : w - 1])
+            & (seg_map[: h - 1, 1:w] != self.ignore_index)
+            & (seg_map[1:h, : w - 1] != self.ignore_index)
+        ] = 1
 
-        kernel = cv2.getStructuringElement(cv2.MORPH_RECT,
-                                           (self.edge_width, self.edge_width))
+        kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (self.edge_width, self.edge_width))
         edge = cv2.dilate(edge, kernel)
 
-        results['gt_edge_map'] = edge
-        results['edge_width'] = self.edge_width
+        results["gt_edge_map"] = edge
+        results["edge_width"] = self.edge_width
 
         return results
 
     def __repr__(self):
         repr_str = self.__class__.__name__
-        repr_str += f'edge_width={self.edge_width}, '
-        repr_str += f'ignore_index={self.ignore_index})'
+        repr_str += f"edge_width={self.edge_width}, "
+        repr_str += f"ignore_index={self.ignore_index})"
         return repr_str
 
 
@@ -1346,18 +1292,13 @@ class ResizeShortestEdge(BaseTransform):
         max_size (int): The maximum allowed longest edge length.
     """
 
-    def __init__(self, scale: Union[int, Tuple[int, int]],
-                 max_size: int) -> None:
+    def __init__(self, scale: Union[int, Tuple[int, int]], max_size: int) -> None:
         super().__init__()
         self.scale = scale
         self.max_size = max_size
 
         # Create a empty Resize object
-        self.resize = TRANSFORMS.build({
-            'type': 'Resize',
-            'scale': 0,
-            'keep_ratio': True
-        })
+        self.resize = TRANSFORMS.build({"type": "Resize", "scale": 0, "keep_ratio": True})
 
     def _get_output_shape(self, img, short_edge_length) -> Tuple[int, int]:
         """Compute the target image shape with the given `short_edge_length`.
@@ -1389,7 +1330,7 @@ class ResizeShortestEdge(BaseTransform):
         return (new_w, new_h)
 
     def transform(self, results: Dict) -> Dict:
-        self.resize.scale = self._get_output_shape(results['img'], self.scale)
+        self.resize.scale = self._get_output_shape(results["img"], self.scale)
         return self.resize(results)
 
 
@@ -1419,14 +1360,12 @@ class BioMedical3DRandomCrop(BaseTransform):
             center of the crop bounding-box. Default to True.
     """
 
-    def __init__(self,
-                 crop_shape: Union[int, Tuple[int, int, int]],
-                 keep_foreground: bool = True):
+    def __init__(self, crop_shape: Union[int, Tuple[int, int, int]], keep_foreground: bool = True):
         super().__init__()
         assert isinstance(crop_shape, int) or (
             isinstance(crop_shape, tuple) and len(crop_shape) == 3
-        ), 'The expected crop_shape is an integer, or a tuple containing '
-        'three integers'
+        ), "The expected crop_shape is an integer, or a tuple containing "
+        "three integers"
 
         if isinstance(crop_shape, int):
             crop_shape = (crop_shape, crop_shape, crop_shape)
@@ -1459,12 +1398,9 @@ class BioMedical3DRandomCrop(BaseTransform):
             else:
                 all_locs = np.argwhere(seg_map == c)
                 target_num_samples = min(num_samples, len(all_locs))
-                target_num_samples = max(
-                    target_num_samples,
-                    int(np.ceil(len(all_locs) * min_percent_coverage)))
+                target_num_samples = max(target_num_samples, int(np.ceil(len(all_locs) * min_percent_coverage)))
 
-                selected = all_locs[np.random.choice(
-                    len(all_locs), target_num_samples, replace=False)]
+                selected = all_locs[np.random.choice(len(all_locs), target_num_samples, replace=False)]
                 class_locs[c] = selected
                 foreground_classes.append(c)
 
@@ -1472,13 +1408,11 @@ class BioMedical3DRandomCrop(BaseTransform):
         if len(foreground_classes) > 0:
             selected_class = np.random.choice(foreground_classes)
             voxels_of_that_class = class_locs[selected_class]
-            selected_voxel = voxels_of_that_class[np.random.choice(
-                len(voxels_of_that_class))]
+            selected_voxel = voxels_of_that_class[np.random.choice(len(voxels_of_that_class))]
 
         return selected_voxel
 
-    def random_generate_crop_bbox(self, margin_z: int, margin_y: int,
-                                  margin_x: int) -> tuple:
+    def random_generate_crop_bbox(self, margin_z: int, margin_y: int, margin_x: int) -> tuple:
         """Randomly get a crop bounding box.
 
         Args:
@@ -1512,14 +1446,13 @@ class BioMedical3DRandomCrop(BaseTransform):
             tuple: The margin for 3 dimensions of crop bounding-box and image.
         """
 
-        seg_map = results['gt_seg_map']
+        seg_map = results["gt_seg_map"]
         if self.keep_foreground:
             selected_voxel = self.random_sample_location(seg_map)
             if selected_voxel is None:
                 # this only happens if some image does not contain
                 # foreground voxels at all
-                warnings.warn(f'case does not contain any foreground classes'
-                              f': {results["img_path"]}')
+                warnings.warn(f"case does not contain any foreground classes" f': {results["img_path"]}')
                 margin_z = max(seg_map.shape[0] - self.crop_shape[0], 0)
                 margin_y = max(seg_map.shape[1] - self.crop_shape[1], 0)
                 margin_x = max(seg_map.shape[2] - self.crop_shape[2], 0)
@@ -1527,12 +1460,9 @@ class BioMedical3DRandomCrop(BaseTransform):
                 margin_z = max(0, selected_voxel[0] - self.crop_shape[0] // 2)
                 margin_y = max(0, selected_voxel[1] - self.crop_shape[1] // 2)
                 margin_x = max(0, selected_voxel[2] - self.crop_shape[2] // 2)
-                margin_z = max(
-                    0, min(seg_map.shape[0] - self.crop_shape[0], margin_z))
-                margin_y = max(
-                    0, min(seg_map.shape[1] - self.crop_shape[1], margin_y))
-                margin_x = max(
-                    0, min(seg_map.shape[2] - self.crop_shape[2], margin_x))
+                margin_z = max(0, min(seg_map.shape[0] - self.crop_shape[0], margin_z))
+                margin_y = max(0, min(seg_map.shape[1] - self.crop_shape[1], margin_y))
+                margin_x = max(0, min(seg_map.shape[2] - self.crop_shape[2], margin_x))
         else:
             margin_z = max(seg_map.shape[0] - self.crop_shape[0], 0)
             margin_y = max(seg_map.shape[1] - self.crop_shape[1], 0)
@@ -1575,18 +1505,18 @@ class BioMedical3DRandomCrop(BaseTransform):
         crop_bbox = self.random_generate_crop_bbox(*margin)
 
         # crop the image
-        img = results['img']
-        results['img'] = self.crop(img, crop_bbox)
-        results['img_shape'] = results['img'].shape[1:]
+        img = results["img"]
+        results["img"] = self.crop(img, crop_bbox)
+        results["img_shape"] = results["img"].shape[1:]
 
         # crop semantic seg
-        seg_map = results['gt_seg_map']
-        results['gt_seg_map'] = self.crop(seg_map, crop_bbox)
+        seg_map = results["gt_seg_map"]
+        results["gt_seg_map"] = self.crop(seg_map, crop_bbox)
 
         return results
 
     def __repr__(self):
-        return self.__class__.__name__ + f'(crop_shape={self.crop_shape})'
+        return self.__class__.__name__ + f"(crop_shape={self.crop_shape})"
 
 
 @TRANSFORMS.register_module()
@@ -1614,10 +1544,7 @@ class BioMedicalGaussianNoise(BaseTransform):
         std (float): Standard deviation of distribution. Default to 0.1.
     """
 
-    def __init__(self,
-                 prob: float = 0.1,
-                 mean: float = 0.0,
-                 std: float = 0.1) -> None:
+    def __init__(self, prob: float = 0.1, mean: float = 0.0, std: float = 0.1) -> None:
         super().__init__()
         assert 0.0 <= prob <= 1.0 and std >= 0.0
         self.prob = prob
@@ -1635,18 +1562,17 @@ class BioMedicalGaussianNoise(BaseTransform):
         """
         if np.random.rand() < self.prob:
             rand_std = np.random.uniform(0, self.std)
-            noise = np.random.normal(
-                self.mean, rand_std, size=results['img'].shape)
+            noise = np.random.normal(self.mean, rand_std, size=results["img"].shape)
             # noise is float64 array, convert to the results['img'].dtype
-            noise = noise.astype(results['img'].dtype)
-            results['img'] = results['img'] + noise
+            noise = noise.astype(results["img"].dtype)
+            results["img"] = results["img"] + noise
         return results
 
     def __repr__(self):
         repr_str = self.__class__.__name__
-        repr_str += f'(prob={self.prob}, '
-        repr_str += f'mean={self.mean}, '
-        repr_str += f'std={self.std})'
+        repr_str += f"(prob={self.prob}, "
+        repr_str += f"mean={self.mean}, "
+        repr_str += f"std={self.std})"
         return repr_str
 
 
@@ -1681,12 +1607,14 @@ class BioMedicalGaussianBlur(BaseTransform):
             sigma for axis Z, X and Y of the image. Default to True.
     """
 
-    def __init__(self,
-                 sigma_range: Tuple[float, float] = (0.5, 1.0),
-                 prob: float = 0.2,
-                 prob_per_channel: float = 0.5,
-                 different_sigma_per_channel: bool = True,
-                 different_sigma_per_axis: bool = True) -> None:
+    def __init__(
+        self,
+        sigma_range: Tuple[float, float] = (0.5, 1.0),
+        prob: float = 0.2,
+        prob_per_channel: float = 0.5,
+        different_sigma_per_channel: bool = True,
+        different_sigma_per_axis: bool = True,
+    ) -> None:
         super().__init__()
         assert 0.0 <= prob <= 1.0
         assert 0.0 <= prob_per_channel <= 1.0
@@ -1708,8 +1636,8 @@ class BioMedicalGaussianBlur(BaseTransform):
         Args:
             value_range (tuple|list|float|int): the input value range
         """
-        if (isinstance(value_range, (list, tuple))):
-            if (value_range[0] == value_range[1]):
+        if isinstance(value_range, (list, tuple)):
+            if value_range[0] == value_range[1]:
                 value = value_range[0]
             else:
                 orig_type = type(value_range[0])
@@ -1729,17 +1657,13 @@ class BioMedicalGaussianBlur(BaseTransform):
                 # if no `sigma` is generated, generate one
                 # if `self.different_sigma_per_channel` is True,
                 # re-generate random sigma for each channel
-                if (sigma is None or self.different_sigma_per_channel):
-                    if (not self.different_sigma_per_axis):
+                if sigma is None or self.different_sigma_per_channel:
+                    if not self.different_sigma_per_axis:
                         sigma = self._get_valid_sigma(self.sigma_range)
                     else:
-                        sigma = [
-                            self._get_valid_sigma(self.sigma_range)
-                            for _ in data_sample.shape[1:]
-                        ]
+                        sigma = [self._get_valid_sigma(self.sigma_range) for _ in data_sample.shape[1:]]
                 # apply gaussian filter with `sigma`
-                data_sample[c] = gaussian_filter(
-                    data_sample[c], sigma, order=0)
+                data_sample[c] = gaussian_filter(data_sample[c], sigma, order=0)
         return data_sample
 
     def transform(self, results: Dict) -> Dict:
@@ -1752,18 +1676,16 @@ class BioMedicalGaussianBlur(BaseTransform):
             dict: Result dict with random Gaussian noise.
         """
         if np.random.rand() < self.prob:
-            results['img'] = self._gaussian_blur(results['img'])
+            results["img"] = self._gaussian_blur(results["img"])
         return results
 
     def __repr__(self):
         repr_str = self.__class__.__name__
-        repr_str += f'(prob={self.prob}, '
-        repr_str += f'prob_per_channel={self.prob_per_channel}, '
-        repr_str += f'sigma_range={self.sigma_range}, '
-        repr_str += 'different_sigma_per_channel='\
-                    f'{self.different_sigma_per_channel}, '
-        repr_str += 'different_sigma_per_axis='\
-                    f'{self.different_sigma_per_axis})'
+        repr_str += f"(prob={self.prob}, "
+        repr_str += f"prob_per_channel={self.prob_per_channel}, "
+        repr_str += f"sigma_range={self.sigma_range}, "
+        repr_str += "different_sigma_per_channel=" f"{self.different_sigma_per_channel}, "
+        repr_str += "different_sigma_per_axis=" f"{self.different_sigma_per_axis})"
         return repr_str
 
 
@@ -1796,12 +1718,14 @@ class BioMedicalRandomGamma(BaseTransform):
             augmentation. Default: False.
     """
 
-    def __init__(self,
-                 prob: float = 0.5,
-                 gamma_range: Tuple[float] = (0.5, 2),
-                 invert_image: bool = False,
-                 per_channel: bool = False,
-                 retain_stats: bool = False):
+    def __init__(
+        self,
+        prob: float = 0.5,
+        gamma_range: Tuple[float] = (0.5, 2),
+        invert_image: bool = False,
+        per_channel: bool = False,
+        retain_stats: bool = False,
+    ):
         assert 0 <= prob and prob <= 1
         assert isinstance(gamma_range, tuple) and len(gamma_range) == 2
         assert isinstance(invert_image, bool)
@@ -1838,12 +1762,10 @@ class BioMedicalRandomGamma(BaseTransform):
             if np.random.random() < 0.5 and self.gamma_range[0] < 1:
                 gamma = np.random.uniform(self.gamma_range[0], 1)
             else:
-                gamma = np.random.uniform(
-                    max(self.gamma_range[0], 1), self.gamma_range[1])
+                gamma = np.random.uniform(max(self.gamma_range[0], 1), self.gamma_range[1])
             img_min = img.min()
             img_range = img.max() - img_min  # range
-            img = np.power(((img - img_min) / float(img_range + 1e-7)),
-                           gamma) * img_range + img_min
+            img = np.power(((img - img_min) / float(img_range + 1e-7)), gamma) * img_range + img_min
             if retain_stats_here:
                 img = img - img.mean()
                 img = img / (img.std() + 1e-8) * img_std
@@ -1871,18 +1793,18 @@ class BioMedicalRandomGamma(BaseTransform):
         do_gamma = self._do_gamma()
 
         if do_gamma:
-            results['img'] = self._adjust_gamma(results['img'])
+            results["img"] = self._adjust_gamma(results["img"])
         else:
             pass
         return results
 
     def __repr__(self):
         repr_str = self.__class__.__name__
-        repr_str += f'(prob={self.prob}, '
-        repr_str += f'gamma_range={self.gamma_range},'
-        repr_str += f'invert_image={self.invert_image},'
-        repr_str += f'per_channel={self.per_channel},'
-        repr_str += f'retain_stats={self.retain_stats}'
+        repr_str += f"(prob={self.prob}, "
+        repr_str += f"gamma_range={self.gamma_range},"
+        repr_str += f"invert_image={self.invert_image},"
+        repr_str += f"per_channel={self.per_channel},"
+        repr_str += f"retain_stats={self.retain_stats}"
         return repr_str
 
 
@@ -1919,11 +1841,7 @@ class BioMedical3DPad(BaseTransform):
             The value to be filled in padding area. Default: 0.
     """
 
-    def __init__(self,
-                 pad_shape: Tuple[int, int, int],
-                 pad_val: float = 0.,
-                 seg_pad_val: int = 0) -> None:
-
+    def __init__(self, pad_shape: Tuple[int, int, int], pad_val: float = 0.0, seg_pad_val: int = 0) -> None:
         # check pad_shape
         assert pad_shape is not None
         if not isinstance(pad_shape, tuple):
@@ -1943,11 +1861,10 @@ class BioMedical3DPad(BaseTransform):
             dict: The dict contains the padded image and shape
                 information.
         """
-        padded_img = self._to_pad(
-            results['img'], pad_shape=self.pad_shape, pad_val=self.pad_val)
+        padded_img = self._to_pad(results["img"], pad_shape=self.pad_shape, pad_val=self.pad_val)
 
-        results['img'] = padded_img
-        results['pad_shape'] = padded_img.shape[1:]
+        results["img"] = padded_img
+        results["pad_shape"] = padded_img.shape[1:]
 
     def _pad_seg(self, results: dict) -> None:
         """Pad semantic segmentation map according to ``self.pad_shape`` if
@@ -1959,17 +1876,14 @@ class BioMedical3DPad(BaseTransform):
         Returns:
             dict: Update the padded gt seg map in dict.
         """
-        if results.get('gt_seg_map', None) is not None:
+        if results.get("gt_seg_map", None) is not None:
             pad_gt_seg = self._to_pad(
-                results['gt_seg_map'][None, ...],
-                pad_shape=results['pad_shape'],
-                pad_val=self.seg_pad_val)
-            results['gt_seg_map'] = pad_gt_seg[1:]
+                results["gt_seg_map"][None, ...], pad_shape=results["pad_shape"], pad_val=self.seg_pad_val
+            )
+            results["gt_seg_map"] = pad_gt_seg[1:]
 
     @staticmethod
-    def _to_pad(img: np.ndarray,
-                pad_shape: Tuple[int, int, int],
-                pad_val: Union[int, float] = 0) -> np.ndarray:
+    def _to_pad(img: np.ndarray, pad_shape: Tuple[int, int, int], pad_val: Union[int, float] = 0) -> np.ndarray:
         """Pad the given 3d image to a certain shape with specified padding
         value.
 
@@ -1993,7 +1907,7 @@ class BioMedical3DPad(BaseTransform):
 
         pad_list = [(0, 0), pad_d, pad_h, pad_w]
 
-        img = np.pad(img, pad_list, mode='constant', constant_values=pad_val)
+        img = np.pad(img, pad_list, mode="constant", constant_values=pad_val)
         return img
 
     def transform(self, results: dict) -> dict:
@@ -2012,9 +1926,9 @@ class BioMedical3DPad(BaseTransform):
 
     def __repr__(self):
         repr_str = self.__class__.__name__
-        repr_str += f'pad_shape={self.pad_shape}, '
-        repr_str += f'pad_val={self.pad_val}), '
-        repr_str += f'seg_pad_val={self.seg_pad_val})'
+        repr_str += f"pad_shape={self.pad_shape}, "
+        repr_str += f"pad_val={self.pad_val}), "
+        repr_str += f"seg_pad_val={self.seg_pad_val})"
         return repr_str
 
 
@@ -2055,10 +1969,7 @@ class BioMedical3DRandomFlip(BaseTransform):
         The segmentation label pairs that are swapped when flipping.
     """
 
-    def __init__(self,
-                 prob: float,
-                 axes: Tuple[int, ...],
-                 swap_label_pairs: Optional[List[Tuple[int, int]]] = None):
+    def __init__(self, prob: float, axes: Tuple[int, ...], swap_label_pairs: Optional[List[Tuple[int, int]]] = None):
         self.prob = prob
         self.axes = axes
         self.swap_label_pairs = swap_label_pairs
@@ -2095,8 +2006,8 @@ class BioMedical3DRandomFlip(BaseTransform):
     def _swap_label(self, seg: np.ndarray) -> np.ndarray:
         out = seg.copy()
         for first, second in self.swap_label_pairs:
-            first_area = (seg == first)
-            second_area = (seg == second)
+            first_area = seg == first
+            second_area = seg == second
             out[first_area] = second
             out[second_area] = first
         return out
@@ -2111,27 +2022,24 @@ class BioMedical3DRandomFlip(BaseTransform):
                 result dict.
         """
         # get actual flipped axis
-        if 'do_flip' not in results:
-            results['do_flip'] = self._do_flip(results['img'])
-        if 'flip_axes' not in results:
-            results['flip_axes'] = self.axes
+        if "do_flip" not in results:
+            results["do_flip"] = self._do_flip(results["img"])
+        if "flip_axes" not in results:
+            results["flip_axes"] = self.axes
         # flip image
-        results['img'] = self._flip(
-            results['img'], direction=results['do_flip'])
+        results["img"] = self._flip(results["img"], direction=results["do_flip"])
         # flip seg
-        if results['gt_seg_map'] is not None:
-            if results['gt_seg_map'].shape != results['img'].shape:
-                results['gt_seg_map'] = results['gt_seg_map'][None, :]
-            results['gt_seg_map'] = self._flip(
-                results['gt_seg_map'], direction=results['do_flip'])
-            results['gt_seg_map'] = results['gt_seg_map'].squeeze()
+        if results["gt_seg_map"] is not None:
+            if results["gt_seg_map"].shape != results["img"].shape:
+                results["gt_seg_map"] = results["gt_seg_map"][None, :]
+            results["gt_seg_map"] = self._flip(results["gt_seg_map"], direction=results["do_flip"])
+            results["gt_seg_map"] = results["gt_seg_map"].squeeze()
             # swap label pairs
             if self.swap_label_pairs is not None:
-                results['gt_seg_map'] = self._swap_label(results['gt_seg_map'])
+                results["gt_seg_map"] = self._swap_label(results["gt_seg_map"])
         return results
 
     def __repr__(self):
         repr_str = self.__class__.__name__
-        repr_str += f'(prob={self.prob}, axes={self.axes}, ' \
-                    f'swap_label_pairs={self.swap_label_pairs})'
+        repr_str += f"(prob={self.prob}, axes={self.axes}, " f"swap_label_pairs={self.swap_label_pairs})"
         return repr_str

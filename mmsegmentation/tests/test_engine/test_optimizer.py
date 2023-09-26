@@ -5,7 +5,6 @@ from mmengine.optim import build_optim_wrapper
 
 
 class ExampleModel(nn.Module):
-
     def __init__(self):
         super().__init__()
         self.param1 = nn.Parameter(torch.ones(1))
@@ -25,9 +24,8 @@ momentum = 0.9
 def test_build_optimizer():
     model = ExampleModel()
     optim_wrapper_cfg = dict(
-        type='OptimWrapper',
-        optimizer=dict(
-            type='SGD', lr=base_lr, weight_decay=base_wd, momentum=momentum))
+        type="OptimWrapper", optimizer=dict(type="SGD", lr=base_lr, weight_decay=base_wd, momentum=momentum)
+    )
     optim_wrapper = build_optim_wrapper(model, optim_wrapper_cfg)
     # test whether optimizer is successfully built from parent.
     assert isinstance(optim_wrapper.optimizer, torch.optim.SGD)

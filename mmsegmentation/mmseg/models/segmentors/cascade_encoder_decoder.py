@@ -1,11 +1,10 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 from typing import List, Optional
 
+from mmseg.registry import MODELS
+from mmseg.utils import ConfigType, OptConfigType, OptMultiConfig, OptSampleList, SampleList, add_prefix
 from torch import Tensor, nn
 
-from mmseg.registry import MODELS
-from mmseg.utils import (ConfigType, OptConfigType, OptMultiConfig,
-                         OptSampleList, SampleList, add_prefix)
 from .encoder_decoder import EncoderDecoder
 
 
@@ -36,17 +35,19 @@ class CascadeEncoderDecoder(EncoderDecoder):
             :class:`BaseModule`.
     """
 
-    def __init__(self,
-                 num_stages: int,
-                 backbone: ConfigType,
-                 decode_head: ConfigType,
-                 neck: OptConfigType = None,
-                 auxiliary_head: OptConfigType = None,
-                 train_cfg: OptConfigType = None,
-                 test_cfg: OptConfigType = None,
-                 data_preprocessor: OptConfigType = None,
-                 pretrained: Optional[str] = None,
-                 init_cfg: OptMultiConfig = None):
+    def __init__(
+        self,
+        num_stages: int,
+        backbone: ConfigType,
+        decode_head: ConfigType,
+        neck: OptConfigType = None,
+        auxiliary_head: OptConfigType = None,
+        train_cfg: OptConfigType = None,
+        test_cfg: OptConfigType = None,
+        data_preprocessor: OptConfigType = None,
+        pretrained: Optional[str] = None,
+        init_cfg: OptMultiConfig = None,
+    ):
         self.num_stages = num_stages
         super().__init__(
             backbone=backbone,
@@ -57,7 +58,8 @@ class CascadeEncoderDecoder(EncoderDecoder):
             test_cfg=test_cfg,
             data_preprocessor=data_preprocessor,
             pretrained=pretrained,
-            init_cfg=init_cfg)
+            init_cfg=init_cfg,
+        )
 
     def _init_decode_head(self, decode_head: ConfigType) -> None:
         """Initialize ``decode_head``"""
@@ -70,29 +72,25 @@ class CascadeEncoderDecoder(EncoderDecoder):
         self.num_classes = self.decode_head[-1].num_classes
         self.out_channels = self.decode_head[-1].out_channels
 
-    def encode_decode(self, inputs: Tensor,
-                      batch_img_metas: List[dict]) -> Tensor:
+    def encode_decode(self, inputs: Tensor, batch_img_metas: List[dict]) -> Tensor:
         """Encode images with backbone and decode into a semantic segmentation
         map of the same size as input."""
         x = self.extract_feat(inputs)
         out = self.decode_head[0].forward(x)
         for i in range(1, self.num_stages - 1):
             out = self.decode_head[i].forward(x, out)
-        seg_logits_list = self.decode_head[-1].predict(x, out, batch_img_metas,
-                                                       self.test_cfg)
+        seg_logits_list = self.decode_head[-1].predict(x, out, batch_img_metas, self.test_cfg)
 
         return seg_logits_list
 
-    def _decode_head_forward_train(self, inputs: Tensor,
-                                   data_samples: SampleList) -> dict:
+    def _decode_head_forward_train(self, inputs: Tensor, data_samples: SampleList) -> dict:
         """Run forward function and calculate loss for decode head in
         training."""
         losses = dict()
 
-        loss_decode = self.decode_head[0].loss(inputs, data_samples,
-                                               self.train_cfg)
+        loss_decode = self.decode_head[0].loss(inputs, data_samples, self.train_cfg)
 
-        losses.update(add_prefix(loss_decode, 'decode_0'))
+        losses.update(add_prefix(loss_decode, "decode_0"))
         # get batch_img_metas
         batch_size = len(data_samples)
         batch_img_metas = []
@@ -105,18 +103,13 @@ class CascadeEncoderDecoder(EncoderDecoder):
             if i == 1:
                 prev_outputs = self.decode_head[0].forward(inputs)
             else:
-                prev_outputs = self.decode_head[i - 1].forward(
-                    inputs, prev_outputs)
-            loss_decode = self.decode_head[i].loss(inputs, prev_outputs,
-                                                   data_samples,
-                                                   self.train_cfg)
-            losses.update(add_prefix(loss_decode, f'decode_{i}'))
+                prev_outputs = self.decode_head[i - 1].forward(inputs, prev_outputs)
+            loss_decode = self.decode_head[i].loss(inputs, prev_outputs, data_samples, self.train_cfg)
+            losses.update(add_prefix(loss_decode, f"decode_{i}"))
 
         return losses
 
-    def _forward(self,
-                 inputs: Tensor,
-                 data_samples: OptSampleList = None) -> Tensor:
+    def _forward(self, inputs: Tensor, data_samples: OptSampleList = None) -> Tensor:
         """Network forward process.
 
         Args:

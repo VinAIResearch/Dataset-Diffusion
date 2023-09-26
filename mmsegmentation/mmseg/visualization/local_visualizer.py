@@ -6,7 +6,6 @@ import numpy as np
 from mmengine.dist import master_only
 from mmengine.structures import PixelData
 from mmengine.visualization import Visualizer
-
 from mmseg.registry import VISUALIZERS
 from mmseg.structures import SegDataSample
 from mmseg.utils import get_classes, get_palette
@@ -60,25 +59,27 @@ class SegLocalVisualizer(Visualizer):
         >>> seg_local_visualizer.add_datasample(
         ...                        'visualizer_example', image,
         ...                         gt_seg_data_sample, show=True)
-    """ # noqa
+    """  # noqa
 
-    def __init__(self,
-                 name: str = 'visualizer',
-                 image: Optional[np.ndarray] = None,
-                 vis_backends: Optional[Dict] = None,
-                 save_dir: Optional[str] = None,
-                 classes: Optional[List] = None,
-                 palette: Optional[List] = None,
-                 dataset_name: Optional[str] = None,
-                 alpha: float = 0.8,
-                 **kwargs):
+    def __init__(
+        self,
+        name: str = "visualizer",
+        image: Optional[np.ndarray] = None,
+        vis_backends: Optional[Dict] = None,
+        save_dir: Optional[str] = None,
+        classes: Optional[List] = None,
+        palette: Optional[List] = None,
+        dataset_name: Optional[str] = None,
+        alpha: float = 0.8,
+        **kwargs
+    ):
         super().__init__(name, image, vis_backends, save_dir, **kwargs)
         self.alpha: float = alpha
         self.set_dataset_meta(palette, classes, dataset_name)
 
-    def _draw_sem_seg(self, image: np.ndarray, sem_seg: PixelData,
-                      classes: Optional[List],
-                      palette: Optional[List]) -> np.ndarray:
+    def _draw_sem_seg(
+        self, image: np.ndarray, sem_seg: PixelData, classes: Optional[List], palette: Optional[List]
+    ) -> np.ndarray:
         """Draw semantic seg of GT or prediction.
 
         Args:
@@ -112,15 +113,13 @@ class SegLocalVisualizer(Visualizer):
 
         # draw semantic masks
         for label, color in zip(labels, colors):
-            self.draw_binary_masks(
-                sem_seg == label, colors=[color], alphas=self.alpha)
+            self.draw_binary_masks(sem_seg == label, colors=[color], alphas=self.alpha)
 
         return self.get_image()
 
-    def set_dataset_meta(self,
-                         classes: Optional[List] = None,
-                         palette: Optional[List] = None,
-                         dataset_name: Optional[str] = None) -> None:
+    def set_dataset_meta(
+        self, classes: Optional[List] = None, palette: Optional[List] = None, dataset_name: Optional[str] = None
+    ) -> None:
         """Set meta information to visualizer.
 
         Args:
@@ -137,31 +136,31 @@ class SegLocalVisualizer(Visualizer):
                 visulizer will use the meta information of the dataset i.e.
                 classes and palette, but the `classes` and `palette` have
                 higher priority. Defaults to None.
-        """ # noqa
+        """  # noqa
         # Set default value. When calling
         # `SegLocalVisualizer().dataset_meta=xxx`,
         # it will override the default value.
         if dataset_name is None:
-            dataset_name = 'cityscapes'
+            dataset_name = "cityscapes"
         classes = classes if classes else get_classes(dataset_name)
         palette = palette if palette else get_palette(dataset_name)
-        assert len(classes) == len(
-            palette), 'The length of classes should be equal to palette'
-        self.dataset_meta: dict = {'classes': classes, 'palette': palette}
+        assert len(classes) == len(palette), "The length of classes should be equal to palette"
+        self.dataset_meta: dict = {"classes": classes, "palette": palette}
 
     @master_only
     def add_datasample(
-            self,
-            name: str,
-            image: np.ndarray,
-            data_sample: Optional[SegDataSample] = None,
-            draw_gt: bool = True,
-            draw_pred: bool = True,
-            show: bool = False,
-            wait_time: float = 0,
-            # TODO: Supported in mmengine's Viusalizer.
-            out_file: Optional[str] = None,
-            step: int = 0) -> None:
+        self,
+        name: str,
+        image: np.ndarray,
+        data_sample: Optional[SegDataSample] = None,
+        draw_gt: bool = True,
+        draw_pred: bool = True,
+        show: bool = False,
+        wait_time: float = 0,
+        # TODO: Supported in mmengine's Viusalizer.
+        out_file: Optional[str] = None,
+        step: int = 0,
+    ) -> None:
         """Draw datasample and save to all backends.
 
         - If GT and prediction are plotted at the same time, they are
@@ -188,32 +187,25 @@ class SegLocalVisualizer(Visualizer):
             out_file (str): Path to output file. Defaults to None.
             step (int): Global step value to record. Defaults to 0.
         """
-        classes = self.dataset_meta.get('classes', None)
-        palette = self.dataset_meta.get('palette', None)
+        classes = self.dataset_meta.get("classes", None)
+        palette = self.dataset_meta.get("palette", None)
 
         gt_img_data = None
         pred_img_data = None
 
-        if draw_gt and data_sample is not None and 'gt_sem_seg' in data_sample:
+        if draw_gt and data_sample is not None and "gt_sem_seg" in data_sample:
             gt_img_data = image
-            assert classes is not None, 'class information is ' \
-                                        'not provided when ' \
-                                        'visualizing semantic ' \
-                                        'segmentation results.'
-            gt_img_data = self._draw_sem_seg(gt_img_data,
-                                             data_sample.gt_sem_seg, classes,
-                                             palette)
+            assert classes is not None, (
+                "class information is " "not provided when " "visualizing semantic " "segmentation results."
+            )
+            gt_img_data = self._draw_sem_seg(gt_img_data, data_sample.gt_sem_seg, classes, palette)
 
-        if (draw_pred and data_sample is not None
-                and 'pred_sem_seg' in data_sample):
+        if draw_pred and data_sample is not None and "pred_sem_seg" in data_sample:
             pred_img_data = image
-            assert classes is not None, 'class information is ' \
-                                        'not provided when ' \
-                                        'visualizing semantic ' \
-                                        'segmentation results.'
-            pred_img_data = self._draw_sem_seg(pred_img_data,
-                                               data_sample.pred_sem_seg,
-                                               classes, palette)
+            assert classes is not None, (
+                "class information is " "not provided when " "visualizing semantic " "segmentation results."
+            )
+            pred_img_data = self._draw_sem_seg(pred_img_data, data_sample.pred_sem_seg, classes, palette)
 
         if gt_img_data is not None and pred_img_data is not None:
             drawn_img = np.concatenate((gt_img_data, pred_img_data), axis=1)

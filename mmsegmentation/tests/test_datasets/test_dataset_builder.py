@@ -3,16 +3,15 @@ import os.path as osp
 
 from mmengine.dataset import ConcatDataset, RepeatDataset
 from mmengine.registry import init_default_scope
-
 from mmseg.datasets import MultiImageMixDataset
 from mmseg.registry import DATASETS
 
-init_default_scope('mmseg')
+
+init_default_scope("mmseg")
 
 
 @DATASETS.register_module()
 class ToyDataset:
-
     def __init__(self, cnt=0):
         self.cnt = cnt
 
@@ -24,7 +23,7 @@ class ToyDataset:
 
 
 def test_build_dataset():
-    cfg = dict(type='ToyDataset')
+    cfg = dict(type="ToyDataset")
     dataset = DATASETS.build(cfg)
     assert isinstance(dataset, ToyDataset)
     assert dataset.cnt == 0
@@ -32,16 +31,11 @@ def test_build_dataset():
     assert isinstance(dataset, ToyDataset)
     assert dataset.cnt == 1
 
-    data_root = osp.join(osp.dirname(__file__), '../data/pseudo_dataset')
-    data_prefix = dict(img_path='imgs/', seg_map_path='gts/')
+    data_root = osp.join(osp.dirname(__file__), "../data/pseudo_dataset")
+    data_prefix = dict(img_path="imgs/", seg_map_path="gts/")
 
     # test RepeatDataset
-    cfg = dict(
-        type='BaseSegDataset',
-        pipeline=[],
-        data_root=data_root,
-        data_prefix=data_prefix,
-        serialize_data=False)
+    cfg = dict(type="BaseSegDataset", pipeline=[], data_root=data_root, data_prefix=data_prefix, serialize_data=False)
     dataset = DATASETS.build(cfg)
     dataset_repeat = RepeatDataset(dataset=dataset, times=5)
     assert isinstance(dataset_repeat, RepeatDataset)
@@ -50,18 +44,8 @@ def test_build_dataset():
     # test ConcatDataset
     # We use same dir twice for simplicity
     # with data_prefix.seg_map_path
-    cfg1 = dict(
-        type='BaseSegDataset',
-        pipeline=[],
-        data_root=data_root,
-        data_prefix=data_prefix,
-        serialize_data=False)
-    cfg2 = dict(
-        type='BaseSegDataset',
-        pipeline=[],
-        data_root=data_root,
-        data_prefix=data_prefix,
-        serialize_data=False)
+    cfg1 = dict(type="BaseSegDataset", pipeline=[], data_root=data_root, data_prefix=data_prefix, serialize_data=False)
+    cfg2 = dict(type="BaseSegDataset", pipeline=[], data_root=data_root, data_prefix=data_prefix, serialize_data=False)
     dataset1 = DATASETS.build(cfg1)
     dataset2 = DATASETS.build(cfg2)
     dataset_concat = ConcatDataset(datasets=[dataset1, dataset2])
@@ -73,7 +57,7 @@ def test_build_dataset():
     assert isinstance(dataset, MultiImageMixDataset)
     assert len(dataset) == 10
 
-    cfg = dict(type='ConcatDataset', datasets=[cfg1, cfg2])
+    cfg = dict(type="ConcatDataset", datasets=[cfg1, cfg2])
 
     dataset = MultiImageMixDataset(dataset=cfg, pipeline=[])
     assert isinstance(dataset, MultiImageMixDataset)
@@ -81,19 +65,21 @@ def test_build_dataset():
 
     # with data_prefix.seg_map_path, ann_file
     cfg1 = dict(
-        type='BaseSegDataset',
+        type="BaseSegDataset",
         pipeline=[],
         data_root=data_root,
         data_prefix=data_prefix,
-        ann_file='splits/train.txt',
-        serialize_data=False)
+        ann_file="splits/train.txt",
+        serialize_data=False,
+    )
     cfg2 = dict(
-        type='BaseSegDataset',
+        type="BaseSegDataset",
         pipeline=[],
         data_root=data_root,
         data_prefix=data_prefix,
-        ann_file='splits/val.txt',
-        serialize_data=False)
+        ann_file="splits/val.txt",
+        serialize_data=False,
+    )
 
     dataset1 = DATASETS.build(cfg1)
     dataset2 = DATASETS.build(cfg2)
@@ -103,21 +89,23 @@ def test_build_dataset():
 
     # test mode
     cfg1 = dict(
-        type='BaseSegDataset',
+        type="BaseSegDataset",
         pipeline=[],
         data_root=data_root,
-        data_prefix=dict(img_path='imgs/'),
+        data_prefix=dict(img_path="imgs/"),
         test_mode=True,
-        metainfo=dict(classes=('pseudo_class', )),
-        serialize_data=False)
+        metainfo=dict(classes=("pseudo_class",)),
+        serialize_data=False,
+    )
     cfg2 = dict(
-        type='BaseSegDataset',
+        type="BaseSegDataset",
         pipeline=[],
         data_root=data_root,
-        data_prefix=dict(img_path='imgs/'),
+        data_prefix=dict(img_path="imgs/"),
         test_mode=True,
-        metainfo=dict(classes=('pseudo_class', )),
-        serialize_data=False)
+        metainfo=dict(classes=("pseudo_class",)),
+        serialize_data=False,
+    )
 
     dataset1 = DATASETS.build(cfg1)
     dataset2 = DATASETS.build(cfg2)
@@ -127,23 +115,25 @@ def test_build_dataset():
 
     # test mode with ann_files
     cfg1 = dict(
-        type='BaseSegDataset',
+        type="BaseSegDataset",
         pipeline=[],
         data_root=data_root,
-        data_prefix=dict(img_path='imgs/'),
-        ann_file='splits/val.txt',
+        data_prefix=dict(img_path="imgs/"),
+        ann_file="splits/val.txt",
         test_mode=True,
-        metainfo=dict(classes=('pseudo_class', )),
-        serialize_data=False)
+        metainfo=dict(classes=("pseudo_class",)),
+        serialize_data=False,
+    )
     cfg2 = dict(
-        type='BaseSegDataset',
+        type="BaseSegDataset",
         pipeline=[],
         data_root=data_root,
-        data_prefix=dict(img_path='imgs/'),
-        ann_file='splits/val.txt',
+        data_prefix=dict(img_path="imgs/"),
+        ann_file="splits/val.txt",
         test_mode=True,
-        metainfo=dict(classes=('pseudo_class', )),
-        serialize_data=False)
+        metainfo=dict(classes=("pseudo_class",)),
+        serialize_data=False,
+    )
 
     dataset1 = DATASETS.build(cfg1)
     dataset2 = DATASETS.build(cfg2)

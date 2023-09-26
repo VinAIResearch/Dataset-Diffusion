@@ -1,5 +1,6 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 from mmseg.registry import DATASETS
+
 from .basesegdataset import BaseSegDataset
 
 
@@ -12,18 +13,11 @@ class STAREDataset(BaseSegDataset):
     ``img_suffix`` is fixed to '.png' and ``seg_map_suffix`` is fixed to
     '.ah.png'.
     """
-    METAINFO = dict(
-        classes=('background', 'vessel'),
-        palette=[[120, 120, 120], [6, 230, 230]])
 
-    def __init__(self,
-                 img_suffix='.png',
-                 seg_map_suffix='.ah.png',
-                 reduce_zero_label=False,
-                 **kwargs) -> None:
+    METAINFO = dict(classes=("background", "vessel"), palette=[[120, 120, 120], [6, 230, 230]])
+
+    def __init__(self, img_suffix=".png", seg_map_suffix=".ah.png", reduce_zero_label=False, **kwargs) -> None:
         super().__init__(
-            img_suffix=img_suffix,
-            seg_map_suffix=seg_map_suffix,
-            reduce_zero_label=reduce_zero_label,
-            **kwargs)
-        assert self.file_client.exists(self.data_prefix['img_path'])
+            img_suffix=img_suffix, seg_map_suffix=seg_map_suffix, reduce_zero_label=reduce_zero_label, **kwargs
+        )
+        assert self.file_client.exists(self.data_prefix["img_path"])

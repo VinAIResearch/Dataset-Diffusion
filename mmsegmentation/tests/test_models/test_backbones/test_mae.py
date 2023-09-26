@@ -1,8 +1,8 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 import pytest
 import torch
-
 from mmseg.models.backbones.mae import MAE
+
 from .utils import check_norm_state
 
 
@@ -18,7 +18,7 @@ def test_mae_backbone():
 
     with pytest.raises(TypeError):
         # out_indices must be int ,list or tuple
-        model = MAE(out_indices=1.)
+        model = MAE(out_indices=1.0)
 
     with pytest.raises(AssertionError):
         # The length of img_size tuple must be lower than 3.
@@ -30,7 +30,7 @@ def test_mae_backbone():
 
     # Test img_size isinstance tuple
     imgs = torch.randn(1, 3, 224, 224)
-    model = MAE(img_size=(224, ))
+    model = MAE(img_size=(224,))
     model.init_weights()
     model(imgs)
 
@@ -111,7 +111,7 @@ def test_mae_backbone():
 
 
 def test_mae_init():
-    path = 'PATH_THAT_DO_NOT_EXIST'
+    path = "PATH_THAT_DO_NOT_EXIST"
     # Test all combinations of pretrained and init_cfg
     # pretrained=None, init_cfg=None
     model = MAE(pretrained=None, init_cfg=None)
@@ -120,9 +120,8 @@ def test_mae_init():
 
     # pretrained=None
     # init_cfg loads pretrain from an non-existent file
-    model = MAE(
-        pretrained=None, init_cfg=dict(type='Pretrained', checkpoint=path))
-    assert model.init_cfg == dict(type='Pretrained', checkpoint=path)
+    model = MAE(pretrained=None, init_cfg=dict(type="Pretrained", checkpoint=path))
+    assert model.init_cfg == dict(type="Pretrained", checkpoint=path)
     # Test loading a checkpoint from an non-existent file
     with pytest.raises(OSError):
         model.init_weights()
@@ -131,21 +130,22 @@ def test_mae_init():
     value = torch.randn(732, 16)
     abs_pos_embed_value = torch.rand(1, 17, 768)
     ckpt = {
-        'state_dict': {
-            'layers.0.attn.relative_position_index': 0,
-            'layers.0.attn.relative_position_bias_table': value,
-            'pos_embed': abs_pos_embed_value
+        "state_dict": {
+            "layers.0.attn.relative_position_index": 0,
+            "layers.0.attn.relative_position_bias_table": value,
+            "pos_embed": abs_pos_embed_value,
         }
     }
     model = MAE(img_size=(512, 512))
     # If scipy is installed, this AttributeError would not be raised.
     from mmengine.utils import is_installed
-    if not is_installed('scipy'):
+
+    if not is_installed("scipy"):
         with pytest.raises(AttributeError):
             model.resize_rel_pos_embed(ckpt)
 
     # test resize abs pos embed
-    ckpt = model.resize_abs_pos_embed(ckpt['state_dict'])
+    ckpt = model.resize_abs_pos_embed(ckpt["state_dict"])
 
     # pretrained=None
     # init_cfg=123, whose type is unsupported
@@ -156,7 +156,7 @@ def test_mae_init():
     # pretrained loads pretrain from an non-existent file
     # init_cfg=None
     model = MAE(pretrained=path, init_cfg=None)
-    assert model.init_cfg == dict(type='Pretrained', checkpoint=path)
+    assert model.init_cfg == dict(type="Pretrained", checkpoint=path)
     # Test loading a checkpoint from an non-existent file
     with pytest.raises(OSError):
         model.init_weights()
@@ -164,8 +164,7 @@ def test_mae_init():
     # pretrained loads pretrain from an non-existent file
     # init_cfg loads pretrain from an non-existent file
     with pytest.raises(AssertionError):
-        model = MAE(
-            pretrained=path, init_cfg=dict(type='Pretrained', checkpoint=path))
+        model = MAE(pretrained=path, init_cfg=dict(type="Pretrained", checkpoint=path))
     with pytest.raises(AssertionError):
         model = MAE(pretrained=path, init_cfg=123)
 
@@ -177,8 +176,7 @@ def test_mae_init():
     # pretrain=123, whose type is unsupported
     # init_cfg loads pretrain from an non-existent file
     with pytest.raises(AssertionError):
-        model = MAE(
-            pretrained=123, init_cfg=dict(type='Pretrained', checkpoint=path))
+        model = MAE(pretrained=123, init_cfg=dict(type="Pretrained", checkpoint=path))
 
     # pretrain=123, whose type is unsupported
     # init_cfg=123, whose type is unsupported

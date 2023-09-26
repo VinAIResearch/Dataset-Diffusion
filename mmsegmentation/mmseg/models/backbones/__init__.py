@@ -23,10 +23,33 @@ from .twins import PCPVT, SVT
 from .unet import UNet
 from .vit import VisionTransformer
 
+
 __all__ = [
-    'ResNet', 'ResNetV1c', 'ResNetV1d', 'ResNeXt', 'HRNet', 'FastSCNN',
-    'ResNeSt', 'MobileNetV2', 'UNet', 'CGNet', 'MobileNetV3',
-    'VisionTransformer', 'SwinTransformer', 'MixVisionTransformer',
-    'BiSeNetV1', 'BiSeNetV2', 'ICNet', 'TIMMBackbone', 'ERFNet', 'PCPVT',
-    'SVT', 'STDCNet', 'STDCContextPathNet', 'BEiT', 'MAE', 'PIDNet', 'MSCAN'
+    "ResNet",
+    "ResNetV1c",
+    "ResNetV1d",
+    "ResNeXt",
+    "HRNet",
+    "FastSCNN",
+    "ResNeSt",
+    "MobileNetV2",
+    "UNet",
+    "CGNet",
+    "MobileNetV3",
+    "VisionTransformer",
+    "SwinTransformer",
+    "MixVisionTransformer",
+    "BiSeNetV1",
+    "BiSeNetV2",
+    "ICNet",
+    "TIMMBackbone",
+    "ERFNet",
+    "PCPVT",
+    "SVT",
+    "STDCNet",
+    "STDCContextPathNet",
+    "BEiT",
+    "MAE",
+    "PIDNet",
+    "MSCAN",
 ]

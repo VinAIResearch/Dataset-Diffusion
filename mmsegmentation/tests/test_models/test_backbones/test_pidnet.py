@@ -4,17 +4,17 @@ import tempfile
 
 import torch
 from mmengine.registry import init_default_scope
-
 from mmseg.registry import MODELS
 
-init_default_scope('mmseg')
+
+init_default_scope("mmseg")
 
 
 def test_pidnet_backbone():
     # Test PIDNet Standard Forward
-    norm_cfg = dict(type='BN', requires_grad=True)
+    norm_cfg = dict(type="BN", requires_grad=True)
     backbone_cfg = dict(
-        type='PIDNet',
+        type="PIDNet",
         in_channels=3,
         channels=32,
         ppm_channels=96,
@@ -22,7 +22,8 @@ def test_pidnet_backbone():
         num_branch_blocks=3,
         align_corners=False,
         norm_cfg=norm_cfg,
-        act_cfg=dict(type='ReLU', inplace=True))
+        act_cfg=dict(type="ReLU", inplace=True),
+    )
     model = MODELS.build(backbone_cfg)
     model.init_weights()
 
@@ -30,8 +31,7 @@ def test_pidnet_backbone():
     temp_file = tempfile.NamedTemporaryFile()
     temp_file.close()
     torch.save(model.state_dict(), temp_file.name)
-    backbone_cfg.update(
-        init_cfg=dict(type='Pretrained', checkpoint=temp_file.name))
+    backbone_cfg.update(init_cfg=dict(type="Pretrained", checkpoint=temp_file.name))
     model = MODELS.build(backbone_cfg)
     model.init_weights()
     os.remove(temp_file.name)
@@ -42,7 +42,7 @@ def test_pidnet_backbone():
     imgs = torch.randn(batch_size, 3, 64, 128)
     feats = model(imgs)
 
-    assert type(feats) == torch.Tensor
+    assert isinstance(feats, torch.Tensor)
     assert feats.shape == torch.Size([batch_size, 128, 8, 16])
 
     # Test train mode
@@ -73,8 +73,7 @@ def test_pidnet_backbone():
     assert feats[2].shape == torch.Size([batch_size, 128, 8, 16])
 
     # Test pidnet-l
-    backbone_cfg.update(
-        channels=64, ppm_channesl=112, num_stem_blocks=3, num_branch_blocks=4)
+    backbone_cfg.update(channels=64, ppm_channesl=112, num_stem_blocks=3, num_branch_blocks=4)
     model = MODELS.build(backbone_cfg)
     feats = model(imgs)
 

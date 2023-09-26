@@ -1,19 +1,20 @@
 # model settings
-norm_cfg = dict(type='SyncBN', requires_grad=True)
+norm_cfg = dict(type="SyncBN", requires_grad=True)
 data_preprocessor = dict(
-    type='SegDataPreProcessor',
+    type="SegDataPreProcessor",
     mean=[123.675, 116.28, 103.53],
     std=[58.395, 57.12, 57.375],
     bgr_to_rgb=True,
     pad_val=0,
-    seg_pad_val=255)
+    seg_pad_val=255,
+)
 model = dict(
-    type='CascadeEncoderDecoder',
+    type="CascadeEncoderDecoder",
     data_preprocessor=data_preprocessor,
     num_stages=2,
-    pretrained='open-mmlab://resnet50_v1c',
+    pretrained="open-mmlab://resnet50_v1c",
     backbone=dict(
-        type='ResNetV1c',
+        type="ResNetV1c",
         depth=50,
         num_stages=4,
         out_indices=(0, 1, 2, 3),
@@ -21,16 +22,13 @@ model = dict(
         strides=(1, 2, 2, 2),
         norm_cfg=norm_cfg,
         norm_eval=False,
-        style='pytorch',
-        contract_dilation=True),
-    neck=dict(
-        type='FPN',
-        in_channels=[256, 512, 1024, 2048],
-        out_channels=256,
-        num_outs=4),
+        style="pytorch",
+        contract_dilation=True,
+    ),
+    neck=dict(type="FPN", in_channels=[256, 512, 1024, 2048], out_channels=256, num_outs=4),
     decode_head=[
         dict(
-            type='FPNHead',
+            type="FPNHead",
             in_channels=[256, 256, 256, 256],
             in_index=[0, 1, 2, 3],
             feature_strides=[4, 8, 16, 32],
@@ -39,10 +37,10 @@ model = dict(
             num_classes=19,
             norm_cfg=norm_cfg,
             align_corners=False,
-            loss_decode=dict(
-                type='CrossEntropyLoss', use_sigmoid=False, loss_weight=1.0)),
+            loss_decode=dict(type="CrossEntropyLoss", use_sigmoid=False, loss_weight=1.0),
+        ),
         dict(
-            type='PointHead',
+            type="PointHead",
             in_channels=[256],
             in_index=[0],
             channels=256,
@@ -51,14 +49,10 @@ model = dict(
             dropout_ratio=-1,
             num_classes=19,
             align_corners=False,
-            loss_decode=dict(
-                type='CrossEntropyLoss', use_sigmoid=False, loss_weight=1.0))
+            loss_decode=dict(type="CrossEntropyLoss", use_sigmoid=False, loss_weight=1.0),
+        ),
     ],
     # model training and testing settings
-    train_cfg=dict(
-        num_points=2048, oversample_ratio=3, importance_sample_ratio=0.75),
-    test_cfg=dict(
-        mode='whole',
-        subdivision_steps=2,
-        subdivision_num_points=8196,
-        scale_factor=2))
+    train_cfg=dict(num_points=2048, oversample_ratio=3, importance_sample_ratio=0.75),
+    test_cfg=dict(mode="whole", subdivision_steps=2, subdivision_num_points=8196, scale_factor=2),
+)

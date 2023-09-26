@@ -2,7 +2,6 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-
 from mmseg.models.builder import LOSSES
 
 
@@ -36,11 +35,9 @@ class TreeTripletLoss(nn.Module):
 
     def forward(self, feats: torch.Tensor, labels=None, max_triplet=200):
         labels = labels.unsqueeze(1).float().clone()
-        labels = torch.nn.functional.interpolate(
-            labels, (feats.shape[2], feats.shape[3]), mode='nearest')
+        labels = torch.nn.functional.interpolate(labels, (feats.shape[2], feats.shape[3]), mode="nearest")
         labels = labels.squeeze(1).long()
-        assert labels.shape[-1] == feats.shape[-1], '{} {}'.format(
-            labels.shape, feats.shape)
+        assert labels.shape[-1] == feats.shape[-1], "{} {}".format(labels.shape, feats.shape)
 
         labels = labels.view(-1)
         feats = feats.permute(0, 2, 3, 1)
@@ -54,13 +51,10 @@ class TreeTripletLoss(nn.Module):
         for ii in exist_classes:
             index_range = self.hiera_index[self.hiera_map[ii]]
             index_anchor = labels == ii
-            index_pos = (labels >= index_range[0]) & (
-                labels < index_range[-1]) & (~index_anchor)
+            index_pos = (labels >= index_range[0]) & (labels < index_range[-1]) & (~index_anchor)
             index_neg = (labels < index_range[0]) | (labels >= index_range[-1])
 
-            min_size = min(
-                torch.sum(index_anchor), torch.sum(index_pos),
-                torch.sum(index_neg), max_triplet)
+            min_size = min(torch.sum(index_anchor), torch.sum(index_pos), torch.sum(index_neg), max_triplet)
 
             feats_anchor = feats[index_anchor][:min_size]
             feats_pos = feats[index_pos][:min_size]

@@ -6,9 +6,9 @@ from functools import partial
 from glob import glob
 
 import numpy as np
-from mmengine.utils import (mkdir_or_exist, track_parallel_progress,
-                            track_progress)
+from mmengine.utils import mkdir_or_exist, track_parallel_progress, track_progress
 from PIL import Image
+
 
 COCO_LEN = 123287
 
@@ -184,7 +184,7 @@ clsID_to_trID = {
     179: 168,
     180: 169,
     181: 170,
-    255: 255
+    255: 255,
 }
 
 
@@ -193,23 +193,21 @@ def convert_to_trainID(maskpath, out_mask_dir, is_train):
     mask_copy = mask.copy()
     for clsID, trID in clsID_to_trID.items():
         mask_copy[mask == clsID] = trID
-    seg_filename = osp.join(
-        out_mask_dir, 'train2017',
-        osp.basename(maskpath).split('.')[0] +
-        '_labelTrainIds.png') if is_train else osp.join(
-            out_mask_dir, 'val2017',
-            osp.basename(maskpath).split('.')[0] + '_labelTrainIds.png')
-    Image.fromarray(mask_copy).save(seg_filename, 'PNG')
+    seg_filename = (
+        osp.join(out_mask_dir, "train2017", osp.basename(maskpath).split(".")[0] + "_labelTrainIds.png")
+        if is_train
+        else osp.join(out_mask_dir, "val2017", osp.basename(maskpath).split(".")[0] + "_labelTrainIds.png")
+    )
+    Image.fromarray(mask_copy).save(seg_filename, "PNG")
 
 
 def parse_args():
     parser = argparse.ArgumentParser(
-        description=\
-        'Convert COCO Stuff 164k annotations to mmsegmentation format')  # noqa
-    parser.add_argument('coco_path', help='coco stuff path')
-    parser.add_argument('-o', '--out_dir', help='output path')
-    parser.add_argument(
-        '--nproc', default=16, type=int, help='number of process')
+        description="Convert COCO Stuff 164k annotations to mmsegmentation format"
+    )  # noqa
+    parser.add_argument("coco_path", help="coco stuff path")
+    parser.add_argument("-o", "--out_dir", help="output path")
+    parser.add_argument("--nproc", default=16, type=int, help="number of process")
     args = parser.parse_args()
     return args
 
@@ -220,46 +218,36 @@ def main():
     nproc = args.nproc
 
     out_dir = args.out_dir or coco_path
-    out_img_dir = osp.join(out_dir, 'images')
-    out_mask_dir = osp.join(out_dir, 'annotations')
+    out_img_dir = osp.join(out_dir, "images")
+    out_mask_dir = osp.join(out_dir, "annotations")
 
-    mkdir_or_exist(osp.join(out_mask_dir, 'train2017'))
-    mkdir_or_exist(osp.join(out_mask_dir, 'val2017'))
+    mkdir_or_exist(osp.join(out_mask_dir, "train2017"))
+    mkdir_or_exist(osp.join(out_mask_dir, "val2017"))
 
     if out_dir != coco_path:
-        shutil.copytree(osp.join(coco_path, 'images'), out_img_dir)
+        shutil.copytree(osp.join(coco_path, "images"), out_img_dir)
 
-    train_list = glob(osp.join(coco_path, 'annotations', 'train2017', '*.png'))
-    train_list = [file for file in train_list if '_labelTrainIds' not in file]
-    test_list = glob(osp.join(coco_path, 'annotations', 'val2017', '*.png'))
-    test_list = [file for file in test_list if '_labelTrainIds' not in file]
-    assert (len(train_list) +
-            len(test_list)) == COCO_LEN, 'Wrong length of list {} & {}'.format(
-                len(train_list), len(test_list))
+    train_list = glob(osp.join(coco_path, "annotations", "train2017", "*.png"))
+    train_list = [file for file in train_list if "_labelTrainIds" not in file]
+    test_list = glob(osp.join(coco_path, "annotations", "val2017", "*.png"))
+    test_list = [file for file in test_list if "_labelTrainIds" not in file]
+    assert (len(train_list) + len(test_list)) == COCO_LEN, "Wrong length of list {} & {}".format(
+        len(train_list), len(test_list)
+    )
 
     if args.nproc > 1:
         track_parallel_progress(
-            partial(
-                convert_to_trainID, out_mask_dir=out_mask_dir, is_train=True),
-            train_list,
-            nproc=nproc)
+            partial(convert_to_trainID, out_mask_dir=out_mask_dir, is_train=True), train_list, nproc=nproc
+        )
         track_parallel_progress(
-            partial(
-                convert_to_trainID, out_mask_dir=out_mask_dir, is_train=False),
-            test_list,
-            nproc=nproc)
+            partial(convert_to_trainID, out_mask_dir=out_mask_dir, is_train=False), test_list, nproc=nproc
+        )
     else:
-        track_progress(
-            partial(
-                convert_to_trainID, out_mask_dir=out_mask_dir, is_train=True),
-            train_list)
-        track_progress(
-            partial(
-                convert_to_trainID, out_mask_dir=out_mask_dir, is_train=False),
-            test_list)
+        track_progress(partial(convert_to_trainID, out_mask_dir=out_mask_dir, is_train=True), train_list)
+        track_progress(partial(convert_to_trainID, out_mask_dir=out_mask_dir, is_train=False), test_list)
 
-    print('Done!')
+    print("Done!")
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

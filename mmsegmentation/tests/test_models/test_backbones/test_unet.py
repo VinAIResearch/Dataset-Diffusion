@@ -3,28 +3,24 @@ import pytest
 import torch
 from mmcv.cnn import ConvModule
 from mmengine.registry import init_default_scope
-
-from mmseg.models.backbones.unet import (BasicConvBlock, DeconvModule,
-                                         InterpConv, UNet, UpConvBlock)
+from mmseg.models.backbones.unet import BasicConvBlock, DeconvModule, InterpConv, UNet, UpConvBlock
 from mmseg.models.utils import Upsample
+
 from .utils import check_norm_state
 
-init_default_scope('mmseg')
+
+init_default_scope("mmseg")
 
 
 def test_unet_basic_conv_block():
     with pytest.raises(AssertionError):
         # Not implemented yet.
-        dcn = dict(type='DCN', deform_groups=1, fallback_on_stride=False)
+        dcn = dict(type="DCN", deform_groups=1, fallback_on_stride=False)
         BasicConvBlock(64, 64, dcn=dcn)
 
     with pytest.raises(AssertionError):
         # Not implemented yet.
-        plugins = [
-            dict(
-                cfg=dict(type='ContextBlock', ratio=1. / 16),
-                position='after_conv3')
-        ]
+        plugins = [dict(cfg=dict(type="ContextBlock", ratio=1.0 / 16), position="after_conv3")]
         BasicConvBlock(64, 64, plugins=plugins)
 
     with pytest.raises(AssertionError):
@@ -32,12 +28,10 @@ def test_unet_basic_conv_block():
         plugins = [
             dict(
                 cfg=dict(
-                    type='GeneralizedAttention',
-                    spatial_range=-1,
-                    num_heads=8,
-                    attention_type='0010',
-                    kv_stride=2),
-                position='after_conv2')
+                    type="GeneralizedAttention", spatial_range=-1, num_heads=8, attention_type="0010", kv_stride=2
+                ),
+                position="after_conv2",
+            )
         ]
         BasicConvBlock(64, 64, plugins=plugins)
 
@@ -163,45 +157,34 @@ def test_interp_conv():
 
     # test InterpConv with bilinear upsample for upsample 2X.
     block = InterpConv(
-        64,
-        32,
-        conv_first=False,
-        upsample_cfg=dict(
-            scale_factor=2, mode='bilinear', align_corners=False))
+        64, 32, conv_first=False, upsample_cfg=dict(scale_factor=2, mode="bilinear", align_corners=False)
+    )
     x = torch.randn(1, 64, 128, 128)
     x_out = block(x)
     assert isinstance(block.interp_upsample[0], Upsample)
     assert isinstance(block.interp_upsample[1], ConvModule)
     assert x_out.shape == torch.Size([1, 32, 256, 256])
-    assert block.interp_upsample[0].mode == 'bilinear'
+    assert block.interp_upsample[0].mode == "bilinear"
 
     # test InterpConv with nearest upsample for upsample 2X.
-    block = InterpConv(
-        64,
-        32,
-        conv_first=False,
-        upsample_cfg=dict(scale_factor=2, mode='nearest'))
+    block = InterpConv(64, 32, conv_first=False, upsample_cfg=dict(scale_factor=2, mode="nearest"))
     x = torch.randn(1, 64, 128, 128)
     x_out = block(x)
     assert isinstance(block.interp_upsample[0], Upsample)
     assert isinstance(block.interp_upsample[1], ConvModule)
     assert x_out.shape == torch.Size([1, 32, 256, 256])
-    assert block.interp_upsample[0].mode == 'nearest'
+    assert block.interp_upsample[0].mode == "nearest"
 
 
 def test_up_conv_block():
     with pytest.raises(AssertionError):
         # Not implemented yet.
-        dcn = dict(type='DCN', deform_groups=1, fallback_on_stride=False)
+        dcn = dict(type="DCN", deform_groups=1, fallback_on_stride=False)
         UpConvBlock(BasicConvBlock, 64, 32, 32, dcn=dcn)
 
     with pytest.raises(AssertionError):
         # Not implemented yet.
-        plugins = [
-            dict(
-                cfg=dict(type='ContextBlock', ratio=1. / 16),
-                position='after_conv3')
-        ]
+        plugins = [dict(cfg=dict(type="ContextBlock", ratio=1.0 / 16), position="after_conv3")]
         UpConvBlock(BasicConvBlock, 64, 32, 32, plugins=plugins)
 
     with pytest.raises(AssertionError):
@@ -209,12 +192,10 @@ def test_up_conv_block():
         plugins = [
             dict(
                 cfg=dict(
-                    type='GeneralizedAttention',
-                    spatial_range=-1,
-                    num_heads=8,
-                    attention_type='0010',
-                    kv_stride=2),
-                position='after_conv2')
+                    type="GeneralizedAttention", spatial_range=-1, num_heads=8, attention_type="0010", kv_stride=2
+                ),
+                position="after_conv2",
+            )
         ]
         UpConvBlock(BasicConvBlock, 64, 32, 32, plugins=plugins)
 
@@ -227,8 +208,7 @@ def test_up_conv_block():
 
     # test UpConvBlock with upsample=True for upsample 2X. The spatial size of
     # skip_x is 2X larger than x.
-    block = UpConvBlock(
-        BasicConvBlock, 64, 32, 32, upsample_cfg=dict(type='InterpConv'))
+    block = UpConvBlock(BasicConvBlock, 64, 32, 32, upsample_cfg=dict(type="InterpConv"))
     skip_x = torch.randn(1, 32, 256, 256)
     x = torch.randn(1, 64, 128, 128)
     x_out = block(skip_x, x)
@@ -249,10 +229,8 @@ def test_up_conv_block():
         64,
         32,
         32,
-        upsample_cfg=dict(
-            type='InterpConv',
-            upsample_cfg=dict(
-                scale_factor=2, mode='bilinear', align_corners=False)))
+        upsample_cfg=dict(type="InterpConv", upsample_cfg=dict(scale_factor=2, mode="bilinear", align_corners=False)),
+    )
     skip_x = torch.randn(1, 32, 256, 256)
     x = torch.randn(1, 64, 128, 128)
     x_out = block(skip_x, x)
@@ -261,11 +239,8 @@ def test_up_conv_block():
     # test UpConvBlock with different upsample method for upsample 2X.
     # The upsample method is deconvolution upsample.
     block = UpConvBlock(
-        BasicConvBlock,
-        64,
-        32,
-        32,
-        upsample_cfg=dict(type='DeconvModule', kernel_size=4, scale_factor=2))
+        BasicConvBlock, 64, 32, 32, upsample_cfg=dict(type="DeconvModule", kernel_size=4, scale_factor=2)
+    )
     skip_x = torch.randn(1, 32, 256, 256)
     x = torch.randn(1, 64, 128, 128)
     x_out = block(skip_x, x)
@@ -279,10 +254,8 @@ def test_up_conv_block():
         out_channels=32,
         num_convs=3,
         dilation=3,
-        upsample_cfg=dict(
-            type='InterpConv',
-            upsample_cfg=dict(
-                scale_factor=2, mode='bilinear', align_corners=False)))
+        upsample_cfg=dict(type="InterpConv", upsample_cfg=dict(scale_factor=2, mode="bilinear", align_corners=False)),
+    )
     skip_x = torch.randn(1, 32, 256, 256)
     x = torch.randn(1, 64, 128, 128)
     x_out = block(skip_x, x)
@@ -316,16 +289,12 @@ def test_up_conv_block():
 def test_unet():
     with pytest.raises(AssertionError):
         # Not implemented yet.
-        dcn = dict(type='DCN', deform_groups=1, fallback_on_stride=False)
+        dcn = dict(type="DCN", deform_groups=1, fallback_on_stride=False)
         UNet(3, 64, 5, dcn=dcn)
 
     with pytest.raises(AssertionError):
         # Not implemented yet.
-        plugins = [
-            dict(
-                cfg=dict(type='ContextBlock', ratio=1. / 16),
-                position='after_conv3')
-        ]
+        plugins = [dict(cfg=dict(type="ContextBlock", ratio=1.0 / 16), position="after_conv3")]
         UNet(3, 64, 5, plugins=plugins)
 
     with pytest.raises(AssertionError):
@@ -333,12 +302,10 @@ def test_unet():
         plugins = [
             dict(
                 cfg=dict(
-                    type='GeneralizedAttention',
-                    spatial_range=-1,
-                    num_heads=8,
-                    attention_type='0010',
-                    kv_stride=2),
-                position='after_conv2')
+                    type="GeneralizedAttention", spatial_range=-1, num_heads=8, attention_type="0010", kv_stride=2
+                ),
+                position="after_conv2",
+            )
         ]
         UNet(3, 64, 5, plugins=plugins)
 
@@ -355,7 +322,8 @@ def test_unet():
             dec_num_convs=(2, 2, 2),
             downsamples=(True, True, True),
             enc_dilations=(1, 1, 1, 1),
-            dec_dilations=(1, 1, 1))
+            dec_dilations=(1, 1, 1),
+        )
         x = torch.randn(2, 3, 65, 65)
         unet(x)
 
@@ -372,7 +340,8 @@ def test_unet():
             dec_num_convs=(2, 2, 2, 2),
             downsamples=(True, True, True, True),
             enc_dilations=(1, 1, 1, 1, 1),
-            dec_dilations=(1, 1, 1, 1))
+            dec_dilations=(1, 1, 1, 1),
+        )
         x = torch.randn(2, 3, 65, 65)
         unet(x)
 
@@ -389,7 +358,8 @@ def test_unet():
             dec_num_convs=(2, 2, 2, 2),
             downsamples=(True, True, True, False),
             enc_dilations=(1, 1, 1, 1, 1),
-            dec_dilations=(1, 1, 1, 1))
+            dec_dilations=(1, 1, 1, 1),
+        )
         x = torch.randn(2, 3, 65, 65)
         unet(x)
 
@@ -406,7 +376,8 @@ def test_unet():
             dec_num_convs=(2, 2, 2, 2),
             downsamples=(True, True, True, False),
             enc_dilations=(1, 1, 1, 1, 1),
-            dec_dilations=(1, 1, 1, 1))
+            dec_dilations=(1, 1, 1, 1),
+        )
         x = torch.randn(2, 3, 65, 65)
         unet(x)
 
@@ -423,7 +394,8 @@ def test_unet():
             dec_num_convs=(2, 2, 2, 2, 2),
             downsamples=(True, True, True, True, True),
             enc_dilations=(1, 1, 1, 1, 1, 1),
-            dec_dilations=(1, 1, 1, 1, 1))
+            dec_dilations=(1, 1, 1, 1, 1),
+        )
         x = torch.randn(2, 3, 65, 65)
         unet(x)
 
@@ -438,7 +410,8 @@ def test_unet():
             dec_num_convs=(2, 2, 2, 2),
             downsamples=(True, True, True, True),
             enc_dilations=(1, 1, 1, 1, 1),
-            dec_dilations=(1, 1, 1, 1))
+            dec_dilations=(1, 1, 1, 1),
+        )
         x = torch.randn(2, 3, 64, 64)
         unet(x)
 
@@ -453,7 +426,8 @@ def test_unet():
             dec_num_convs=(2, 2, 2, 2),
             downsamples=(True, True, True, True),
             enc_dilations=(1, 1, 1, 1, 1),
-            dec_dilations=(1, 1, 1, 1))
+            dec_dilations=(1, 1, 1, 1),
+        )
         x = torch.randn(2, 3, 64, 64)
         unet(x)
 
@@ -468,7 +442,8 @@ def test_unet():
             dec_num_convs=(2, 2, 2, 2, 2),
             downsamples=(True, True, True, True),
             enc_dilations=(1, 1, 1, 1, 1),
-            dec_dilations=(1, 1, 1, 1))
+            dec_dilations=(1, 1, 1, 1),
+        )
         x = torch.randn(2, 3, 64, 64)
         unet(x)
 
@@ -483,7 +458,8 @@ def test_unet():
             dec_num_convs=(2, 2, 2, 2),
             downsamples=(True, True, True),
             enc_dilations=(1, 1, 1, 1, 1),
-            dec_dilations=(1, 1, 1, 1))
+            dec_dilations=(1, 1, 1, 1),
+        )
         x = torch.randn(2, 3, 64, 64)
         unet(x)
 
@@ -498,7 +474,8 @@ def test_unet():
             dec_num_convs=(2, 2, 2, 2),
             downsamples=(True, True, True, True),
             enc_dilations=(1, 1, 1, 1),
-            dec_dilations=(1, 1, 1, 1))
+            dec_dilations=(1, 1, 1, 1),
+        )
         x = torch.randn(2, 3, 64, 64)
         unet(x)
 
@@ -513,7 +490,8 @@ def test_unet():
             dec_num_convs=(2, 2, 2, 2),
             downsamples=(True, True, True, True),
             enc_dilations=(1, 1, 1, 1, 1),
-            dec_dilations=(1, 1, 1, 1, 1))
+            dec_dilations=(1, 1, 1, 1, 1),
+        )
         x = torch.randn(2, 3, 64, 64)
         unet(x)
 
@@ -528,7 +506,8 @@ def test_unet():
         downsamples=(True, True, True, True),
         enc_dilations=(1, 1, 1, 1, 1),
         dec_dilations=(1, 1, 1, 1),
-        norm_eval=True)
+        norm_eval=True,
+    )
     unet.train()
     assert check_norm_state(unet.modules(), False)
 
@@ -543,7 +522,8 @@ def test_unet():
         downsamples=(True, True, True, True),
         enc_dilations=(1, 1, 1, 1, 1),
         dec_dilations=(1, 1, 1, 1),
-        norm_eval=False)
+        norm_eval=False,
+    )
     unet.train()
     assert check_norm_state(unet.modules(), True)
 
@@ -557,7 +537,8 @@ def test_unet():
         dec_num_convs=(2, 2, 2, 2),
         downsamples=(True, True, True, True),
         enc_dilations=(1, 1, 1, 1, 1),
-        dec_dilations=(1, 1, 1, 1))
+        dec_dilations=(1, 1, 1, 1),
+    )
 
     x = torch.randn(2, 3, 128, 128)
     x_outs = unet(x)
@@ -577,7 +558,8 @@ def test_unet():
         dec_num_convs=(2, 2, 2, 2),
         downsamples=(True, True, True, False),
         enc_dilations=(1, 1, 1, 1, 1),
-        dec_dilations=(1, 1, 1, 1))
+        dec_dilations=(1, 1, 1, 1),
+    )
 
     x = torch.randn(2, 3, 128, 128)
     x_outs = unet(x)
@@ -597,7 +579,8 @@ def test_unet():
         dec_num_convs=(2, 2, 2, 2),
         downsamples=(True, True, True, False),
         enc_dilations=(1, 1, 1, 1, 1),
-        dec_dilations=(1, 1, 1, 1))
+        dec_dilations=(1, 1, 1, 1),
+    )
 
     x = torch.randn(2, 3, 128, 128)
     x_outs = unet(x)
@@ -617,7 +600,8 @@ def test_unet():
         dec_num_convs=(2, 2, 2, 2),
         downsamples=(True, True, False, False),
         enc_dilations=(1, 1, 1, 1, 1),
-        dec_dilations=(1, 1, 1, 1))
+        dec_dilations=(1, 1, 1, 1),
+    )
 
     x = torch.randn(2, 3, 128, 128)
     x_outs = unet(x)
@@ -637,7 +621,8 @@ def test_unet():
         dec_num_convs=(2, 2, 2, 2),
         downsamples=(True, True, False, False),
         enc_dilations=(1, 1, 1, 1, 1),
-        dec_dilations=(1, 1, 1, 1))
+        dec_dilations=(1, 1, 1, 1),
+    )
 
     x = torch.randn(2, 3, 128, 128)
     x_outs = unet(x)
@@ -657,7 +642,8 @@ def test_unet():
         dec_num_convs=(2, 2, 2, 2),
         downsamples=(True, True, True, False),
         enc_dilations=(1, 1, 1, 1, 1),
-        dec_dilations=(1, 1, 1, 1))
+        dec_dilations=(1, 1, 1, 1),
+    )
 
     x = torch.randn(2, 3, 128, 128)
     x_outs = unet(x)
@@ -677,7 +663,8 @@ def test_unet():
         dec_num_convs=(2, 2, 2, 2),
         downsamples=(True, True, False, False),
         enc_dilations=(1, 1, 1, 1, 1),
-        dec_dilations=(1, 1, 1, 1))
+        dec_dilations=(1, 1, 1, 1),
+    )
 
     x = torch.randn(2, 3, 128, 128)
     x_outs = unet(x)
@@ -697,7 +684,8 @@ def test_unet():
         dec_num_convs=(2, 2, 2, 2),
         downsamples=(True, False, False, False),
         enc_dilations=(1, 1, 1, 1, 1),
-        dec_dilations=(1, 1, 1, 1))
+        dec_dilations=(1, 1, 1, 1),
+    )
 
     x = torch.randn(2, 3, 128, 128)
     x_outs = unet(x)
@@ -717,7 +705,8 @@ def test_unet():
         dec_num_convs=(2, 2, 2, 2),
         downsamples=(False, False, False, False),
         enc_dilations=(1, 1, 1, 1, 1),
-        dec_dilations=(1, 1, 1, 1))
+        dec_dilations=(1, 1, 1, 1),
+    )
 
     x = torch.randn(2, 3, 128, 128)
     x_outs = unet(x)
@@ -737,7 +726,8 @@ def test_unet():
         dec_num_convs=(2, 2, 2, 2),
         downsamples=(True, True, True, True),
         enc_dilations=(1, 1, 1, 1, 1),
-        dec_dilations=(1, 1, 1, 1))
+        dec_dilations=(1, 1, 1, 1),
+    )
     x = torch.randn(2, 3, 128, 128)
     x_outs = unet(x)
     assert x_outs[0].shape == torch.Size([2, 64, 8, 8])
@@ -756,7 +746,8 @@ def test_unet():
         dec_num_convs=(2, 2, 2, 2),
         downsamples=(True, True, True, False),
         enc_dilations=(1, 1, 1, 1, 1),
-        dec_dilations=(1, 1, 1, 1))
+        dec_dilations=(1, 1, 1, 1),
+    )
     x = torch.randn(2, 3, 128, 128)
     x_outs = unet(x)
     assert x_outs[0].shape == torch.Size([2, 64, 16, 16])
@@ -775,7 +766,8 @@ def test_unet():
         dec_num_convs=(2, 2, 2, 2),
         downsamples=(True, True, True, False),
         enc_dilations=(1, 1, 1, 1, 1),
-        dec_dilations=(1, 1, 1, 1))
+        dec_dilations=(1, 1, 1, 1),
+    )
     x = torch.randn(2, 3, 128, 128)
     x_outs = unet(x)
     assert x_outs[0].shape == torch.Size([2, 64, 16, 16])
@@ -794,7 +786,8 @@ def test_unet():
         dec_num_convs=(2, 2, 2, 2),
         downsamples=(True, True, False, False),
         enc_dilations=(1, 1, 1, 1, 1),
-        dec_dilations=(1, 1, 1, 1))
+        dec_dilations=(1, 1, 1, 1),
+    )
     x = torch.randn(2, 3, 128, 128)
     x_outs = unet(x)
     assert x_outs[0].shape == torch.Size([2, 64, 32, 32])
@@ -814,7 +807,8 @@ def test_unet():
         downsamples=(True, True, False, False),
         enc_dilations=(1, 1, 1, 1, 1),
         dec_dilations=(1, 1, 1, 1),
-        pretrained=None)
+        pretrained=None,
+    )
     unet.init_weights()
     x = torch.randn(2, 3, 128, 128)
     x_outs = unet(x)

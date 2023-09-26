@@ -1,8 +1,6 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 import torch
-
-from mmseg.models.utils import (nchw2nlc2nchw, nchw_to_nlc, nlc2nchw2nlc,
-                                nlc_to_nchw)
+from mmseg.models.utils import nchw2nlc2nchw, nchw_to_nlc, nlc2nchw2nlc, nlc_to_nchw
 
 
 def test_nchw2nlc2nchw():

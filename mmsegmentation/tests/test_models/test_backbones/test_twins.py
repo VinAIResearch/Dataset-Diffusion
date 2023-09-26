@@ -1,10 +1,7 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 import pytest
 import torch
-
-from mmseg.models.backbones.twins import (PCPVT, SVT,
-                                          ConditionalPositionEncoding,
-                                          LocallyGroupedSelfAttention)
+from mmseg.models.backbones.twins import PCPVT, SVT, ConditionalPositionEncoding, LocallyGroupedSelfAttention
 
 
 def test_pcpvt():
@@ -18,7 +15,8 @@ def test_pcpvt():
         qkv_bias=True,
         depths=[3, 4, 6, 3],
         sr_ratios=[8, 4, 2, 1],
-        norm_after_stage=False)
+        norm_after_stage=False,
+    )
     model.init_weights()
     outs = model(temp)
     assert outs[0].shape == (1, 32, H // 4, W // 4)
@@ -38,7 +36,8 @@ def test_svt():
         qkv_bias=False,
         depths=[4, 4, 4],
         windiow_sizes=[7, 7, 7],
-        norm_after_stage=True)
+        norm_after_stage=True,
+    )
 
     model.init_weights()
     outs = model(temp)
@@ -48,7 +47,7 @@ def test_svt():
 
 
 def test_svt_init():
-    path = 'PATH_THAT_DO_NOT_EXIST'
+    path = "PATH_THAT_DO_NOT_EXIST"
     # Test all combinations of pretrained and init_cfg
     # pretrained=None, init_cfg=None
     model = SVT(pretrained=None, init_cfg=None)
@@ -57,9 +56,8 @@ def test_svt_init():
 
     # pretrained=None
     # init_cfg loads pretrain from an non-existent file
-    model = SVT(
-        pretrained=None, init_cfg=dict(type='Pretrained', checkpoint=path))
-    assert model.init_cfg == dict(type='Pretrained', checkpoint=path)
+    model = SVT(pretrained=None, init_cfg=dict(type="Pretrained", checkpoint=path))
+    assert model.init_cfg == dict(type="Pretrained", checkpoint=path)
     # Test loading a checkpoint from an non-existent file
     with pytest.raises(OSError):
         model.init_weights()
@@ -73,7 +71,7 @@ def test_svt_init():
     # pretrained loads pretrain from an non-existent file
     # init_cfg=None
     model = SVT(pretrained=path, init_cfg=None)
-    assert model.init_cfg == dict(type='Pretrained', checkpoint=path)
+    assert model.init_cfg == dict(type="Pretrained", checkpoint=path)
     # Test loading a checkpoint from an non-existent file
     with pytest.raises(OSError):
         model.init_weights()
@@ -81,8 +79,7 @@ def test_svt_init():
     # pretrained loads pretrain from an non-existent file
     # init_cfg loads pretrain from an non-existent file
     with pytest.raises(AssertionError):
-        model = SVT(
-            pretrained=path, init_cfg=dict(type='Pretrained', checkpoint=path))
+        model = SVT(pretrained=path, init_cfg=dict(type="Pretrained", checkpoint=path))
     with pytest.raises(AssertionError):
         model = SVT(pretrained=path, init_cfg=123)
 
@@ -94,8 +91,7 @@ def test_svt_init():
     # pretrain=123, whose type is unsupported
     # init_cfg loads pretrain from an non-existent file
     with pytest.raises(AssertionError):
-        model = SVT(
-            pretrained=123, init_cfg=dict(type='Pretrained', checkpoint=path))
+        model = SVT(pretrained=123, init_cfg=dict(type="Pretrained", checkpoint=path))
 
     # pretrain=123, whose type is unsupported
     # init_cfg=123, whose type is unsupported
@@ -104,7 +100,7 @@ def test_svt_init():
 
 
 def test_pcpvt_init():
-    path = 'PATH_THAT_DO_NOT_EXIST'
+    path = "PATH_THAT_DO_NOT_EXIST"
     # Test all combinations of pretrained and init_cfg
     # pretrained=None, init_cfg=None
     model = PCPVT(pretrained=None, init_cfg=None)
@@ -113,9 +109,8 @@ def test_pcpvt_init():
 
     # pretrained=None
     # init_cfg loads pretrain from an non-existent file
-    model = PCPVT(
-        pretrained=None, init_cfg=dict(type='Pretrained', checkpoint=path))
-    assert model.init_cfg == dict(type='Pretrained', checkpoint=path)
+    model = PCPVT(pretrained=None, init_cfg=dict(type="Pretrained", checkpoint=path))
+    assert model.init_cfg == dict(type="Pretrained", checkpoint=path)
     # Test loading a checkpoint from an non-existent file
     with pytest.raises(OSError):
         model.init_weights()
@@ -129,7 +124,7 @@ def test_pcpvt_init():
     # pretrained loads pretrain from an non-existent file
     # init_cfg=None
     model = PCPVT(pretrained=path, init_cfg=None)
-    assert model.init_cfg == dict(type='Pretrained', checkpoint=path)
+    assert model.init_cfg == dict(type="Pretrained", checkpoint=path)
     # Test loading a checkpoint from an non-existent file
     with pytest.raises(OSError):
         model.init_weights()
@@ -137,8 +132,7 @@ def test_pcpvt_init():
     # pretrained loads pretrain from an non-existent file
     # init_cfg loads pretrain from an non-existent file
     with pytest.raises(AssertionError):
-        model = PCPVT(
-            pretrained=path, init_cfg=dict(type='Pretrained', checkpoint=path))
+        model = PCPVT(pretrained=path, init_cfg=dict(type="Pretrained", checkpoint=path))
     with pytest.raises(AssertionError):
         model = PCPVT(pretrained=path, init_cfg=123)
 
@@ -150,8 +144,7 @@ def test_pcpvt_init():
     # pretrain=123, whose type is unsupported
     # init_cfg loads pretrain from an non-existent file
     with pytest.raises(AssertionError):
-        model = PCPVT(
-            pretrained=123, init_cfg=dict(type='Pretrained', checkpoint=path))
+        model = PCPVT(pretrained=123, init_cfg=dict(type="Pretrained", checkpoint=path))
 
     # pretrain=123, whose type is unsupported
     # init_cfg=123, whose type is unsupported

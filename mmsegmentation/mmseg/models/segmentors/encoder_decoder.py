@@ -3,11 +3,10 @@ from typing import List, Optional
 
 import torch.nn as nn
 import torch.nn.functional as F
+from mmseg.registry import MODELS
+from mmseg.utils import ConfigType, OptConfigType, OptMultiConfig, OptSampleList, SampleList, add_prefix
 from torch import Tensor
 
-from mmseg.registry import MODELS
-from mmseg.utils import (ConfigType, OptConfigType, OptMultiConfig,
-                         OptSampleList, SampleList, add_prefix)
 from .base import BaseSegmentor
 
 
@@ -68,21 +67,21 @@ class EncoderDecoder(BaseSegmentor):
             :class:`BaseModule`.
     """  # noqa: E501
 
-    def __init__(self,
-                 backbone: ConfigType,
-                 decode_head: ConfigType,
-                 neck: OptConfigType = None,
-                 auxiliary_head: OptConfigType = None,
-                 train_cfg: OptConfigType = None,
-                 test_cfg: OptConfigType = None,
-                 data_preprocessor: OptConfigType = None,
-                 pretrained: Optional[str] = None,
-                 init_cfg: OptMultiConfig = None):
-        super().__init__(
-            data_preprocessor=data_preprocessor, init_cfg=init_cfg)
+    def __init__(
+        self,
+        backbone: ConfigType,
+        decode_head: ConfigType,
+        neck: OptConfigType = None,
+        auxiliary_head: OptConfigType = None,
+        train_cfg: OptConfigType = None,
+        test_cfg: OptConfigType = None,
+        data_preprocessor: OptConfigType = None,
+        pretrained: Optional[str] = None,
+        init_cfg: OptMultiConfig = None,
+    ):
+        super().__init__(data_preprocessor=data_preprocessor, init_cfg=init_cfg)
         if pretrained is not None:
-            assert backbone.get('pretrained') is None, \
-                'both backbone and segmentor set pretrained weight'
+            assert backbone.get("pretrained") is None, "both backbone and segmentor set pretrained weight"
             backbone.pretrained = pretrained
         self.backbone = MODELS.build(backbone)
         if neck is not None:
@@ -119,40 +118,34 @@ class EncoderDecoder(BaseSegmentor):
             x = self.neck(x)
         return x
 
-    def encode_decode(self, inputs: Tensor,
-                      batch_img_metas: List[dict]) -> Tensor:
+    def encode_decode(self, inputs: Tensor, batch_img_metas: List[dict]) -> Tensor:
         """Encode images with backbone and decode into a semantic segmentation
         map of the same size as input."""
         x = self.extract_feat(inputs)
-        seg_logits = self.decode_head.predict(x, batch_img_metas,
-                                              self.test_cfg)
+        seg_logits = self.decode_head.predict(x, batch_img_metas, self.test_cfg)
 
         return seg_logits
 
-    def _decode_head_forward_train(self, inputs: List[Tensor],
-                                   data_samples: SampleList) -> dict:
+    def _decode_head_forward_train(self, inputs: List[Tensor], data_samples: SampleList) -> dict:
         """Run forward function and calculate loss for decode head in
         training."""
         losses = dict()
-        loss_decode = self.decode_head.loss(inputs, data_samples,
-                                            self.train_cfg)
+        loss_decode = self.decode_head.loss(inputs, data_samples, self.train_cfg)
 
-        losses.update(add_prefix(loss_decode, 'decode'))
+        losses.update(add_prefix(loss_decode, "decode"))
         return losses
 
-    def _auxiliary_head_forward_train(self, inputs: List[Tensor],
-                                      data_samples: SampleList) -> dict:
+    def _auxiliary_head_forward_train(self, inputs: List[Tensor], data_samples: SampleList) -> dict:
         """Run forward function and calculate loss for auxiliary head in
         training."""
         losses = dict()
         if isinstance(self.auxiliary_head, nn.ModuleList):
             for idx, aux_head in enumerate(self.auxiliary_head):
                 loss_aux = aux_head.loss(inputs, data_samples, self.train_cfg)
-                losses.update(add_prefix(loss_aux, f'aux_{idx}'))
+                losses.update(add_prefix(loss_aux, f"aux_{idx}"))
         else:
-            loss_aux = self.auxiliary_head.loss(inputs, data_samples,
-                                                self.train_cfg)
-            losses.update(add_prefix(loss_aux, 'aux'))
+            loss_aux = self.auxiliary_head.loss(inputs, data_samples, self.train_cfg)
+            losses.update(add_prefix(loss_aux, "aux"))
 
         return losses
 
@@ -182,9 +175,7 @@ class EncoderDecoder(BaseSegmentor):
 
         return losses
 
-    def predict(self,
-                inputs: Tensor,
-                data_samples: OptSampleList = None) -> SampleList:
+    def predict(self, inputs: Tensor, data_samples: OptSampleList = None) -> SampleList:
         """Predict results from a batch of inputs and data samples with post-
         processing.
 
@@ -203,25 +194,22 @@ class EncoderDecoder(BaseSegmentor):
                 segmentation before normalization.
         """
         if data_samples is not None:
-            batch_img_metas = [
-                data_sample.metainfo for data_sample in data_samples
-            ]
+            batch_img_metas = [data_sample.metainfo for data_sample in data_samples]
         else:
             batch_img_metas = [
                 dict(
                     ori_shape=inputs.shape[2:],
                     img_shape=inputs.shape[2:],
                     pad_shape=inputs.shape[2:],
-                    padding_size=[0, 0, 0, 0])
+                    padding_size=[0, 0, 0, 0],
+                )
             ] * inputs.shape[0]
 
         seg_logits = self.inference(inputs, batch_img_metas)
 
         return self.postprocess_result(seg_logits, data_samples)
 
-    def _forward(self,
-                 inputs: Tensor,
-                 data_samples: OptSampleList = None) -> Tensor:
+    def _forward(self, inputs: Tensor, data_samples: OptSampleList = None) -> Tensor:
         """Network forward process.
 
         Args:
@@ -236,8 +224,7 @@ class EncoderDecoder(BaseSegmentor):
         x = self.extract_feat(inputs)
         return self.decode_head.forward(x)
 
-    def slide_inference(self, inputs: Tensor,
-                        batch_img_metas: List[dict]) -> Tensor:
+    def slide_inference(self, inputs: Tensor, batch_img_metas: List[dict]) -> Tensor:
         """Inference by sliding-window with overlap.
 
         If h_crop > h_img or w_crop > w_img, the small patch will be used to
@@ -275,13 +262,11 @@ class EncoderDecoder(BaseSegmentor):
                 x1 = max(x2 - w_crop, 0)
                 crop_img = inputs[:, :, y1:y2, x1:x2]
                 # change the image shape to patch shape
-                batch_img_metas[0]['img_shape'] = crop_img.shape[2:]
+                batch_img_metas[0]["img_shape"] = crop_img.shape[2:]
                 # the output of encode_decode is seg logits tensor map
                 # with shape [N, C, H, W]
                 crop_seg_logit = self.encode_decode(crop_img, batch_img_metas)
-                preds += F.pad(crop_seg_logit,
-                               (int(x1), int(preds.shape[3] - x2), int(y1),
-                                int(preds.shape[2] - y2)))
+                preds += F.pad(crop_seg_logit, (int(x1), int(preds.shape[3] - x2), int(y1), int(preds.shape[2] - y2)))
 
                 count_mat[:, :, y1:y2, x1:x2] += 1
         assert (count_mat == 0).sum() == 0
@@ -289,8 +274,7 @@ class EncoderDecoder(BaseSegmentor):
 
         return seg_logits
 
-    def whole_inference(self, inputs: Tensor,
-                        batch_img_metas: List[dict]) -> Tensor:
+    def whole_inference(self, inputs: Tensor, batch_img_metas: List[dict]) -> Tensor:
         """Inference with full image.
 
         Args:
@@ -327,10 +311,10 @@ class EncoderDecoder(BaseSegmentor):
                 input image.
         """
 
-        assert self.test_cfg.mode in ['slide', 'whole']
-        ori_shape = batch_img_metas[0]['ori_shape']
-        assert all(_['ori_shape'] == ori_shape for _ in batch_img_metas)
-        if self.test_cfg.mode == 'slide':
+        assert self.test_cfg.mode in ["slide", "whole"]
+        ori_shape = batch_img_metas[0]["ori_shape"]
+        assert all(_["ori_shape"] == ori_shape for _ in batch_img_metas)
+        if self.test_cfg.mode == "slide":
             seg_logit = self.slide_inference(inputs, batch_img_metas)
         else:
             seg_logit = self.whole_inference(inputs, batch_img_metas)
@@ -347,8 +331,7 @@ class EncoderDecoder(BaseSegmentor):
         # to save memory, we get augmented seg logit inplace
         seg_logit = self.inference(inputs[0], batch_img_metas[0], rescale)
         for i in range(1, len(inputs)):
-            cur_seg_logit = self.inference(inputs[i], batch_img_metas[i],
-                                           rescale)
+            cur_seg_logit = self.inference(inputs[i], batch_img_metas[i], rescale)
             seg_logit += cur_seg_logit
         seg_logit /= len(inputs)
         seg_pred = seg_logit.argmax(dim=1)

@@ -4,7 +4,6 @@ from typing import List
 import torch
 from mmengine.model import BaseTTAModel
 from mmengine.structures import PixelData
-
 from mmseg.registry import MODELS
 from mmseg.structures import SegDataSample
 from mmseg.utils import SampleList
@@ -12,7 +11,6 @@ from mmseg.utils import SampleList
 
 @MODELS.register_module()
 class SegTTAModel(BaseTTAModel):
-
     def merge_preds(self, data_samples_list: List[SampleList]) -> SampleList:
         """Merge predictions of enhanced data to one prediction.
 
@@ -35,14 +33,11 @@ class SegTTAModel(BaseTTAModel):
                     logits += seg_logit.sigmoid()
             logits /= len(data_samples)
             if self.module.out_channels == 1:
-                seg_pred = (logits > self.module.decode_head.threshold
-                            ).to(logits).squeeze(1)
+                seg_pred = (logits > self.module.decode_head.threshold).to(logits).squeeze(1)
             else:
                 seg_pred = logits.argmax(dim=0)
             data_sample = SegDataSample(
-                **{
-                    'pred_sem_seg': PixelData(data=seg_pred),
-                    'gt_sem_seg': data_samples[0].gt_sem_seg
-                })
+                **{"pred_sem_seg": PixelData(data=seg_pred), "gt_sem_seg": data_samples[0].gt_sem_seg}
+            )
             predictions.append(data_sample)
         return predictions

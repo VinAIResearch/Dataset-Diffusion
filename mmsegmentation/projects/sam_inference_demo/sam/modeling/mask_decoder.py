@@ -9,23 +9,22 @@
 from typing import List, Tuple
 
 import torch
+from mmseg.registry import MODELS
 from torch import Tensor, nn
 from torch.nn import functional as F
 
-from mmseg.registry import MODELS
 from .common import LayerNorm2d
 
 
 @MODELS.register_module()
 class MaskDecoder(nn.Module):
-
     def __init__(
         self,
         *,
         transformer_dim: int,
         transformer: dict,
         num_multimask_outputs: int = 3,
-        act_cfg: dict = dict(type='GELU'),
+        act_cfg: dict = dict(type="GELU"),
         iou_head_depth: int = 3,
         iou_head_hidden_dim: int = 256,
     ) -> None:
@@ -58,25 +57,17 @@ class MaskDecoder(nn.Module):
 
         activation = MODELS.build(act_cfg)
         self.output_upscaling = nn.Sequential(
-            nn.ConvTranspose2d(
-                transformer_dim, transformer_dim // 4, kernel_size=2,
-                stride=2),
+            nn.ConvTranspose2d(transformer_dim, transformer_dim // 4, kernel_size=2, stride=2),
             LayerNorm2d(transformer_dim // 4),
             activation,
-            nn.ConvTranspose2d(
-                transformer_dim // 4,
-                transformer_dim // 8,
-                kernel_size=2,
-                stride=2),
+            nn.ConvTranspose2d(transformer_dim // 4, transformer_dim // 8, kernel_size=2, stride=2),
             activation,
         )
-        self.output_hypernetworks_mlps = nn.ModuleList([
-            MLP(transformer_dim, transformer_dim, transformer_dim // 8, 3)
-            for i in range(self.num_mask_tokens)
-        ])
+        self.output_hypernetworks_mlps = nn.ModuleList(
+            [MLP(transformer_dim, transformer_dim, transformer_dim // 8, 3) for i in range(self.num_mask_tokens)]
+        )
 
-        self.iou_prediction_head = MLP(transformer_dim, iou_head_hidden_dim,
-                                       self.num_mask_tokens, iou_head_depth)
+        self.iou_prediction_head = MLP(transformer_dim, iou_head_hidden_dim, self.num_mask_tokens, iou_head_depth)
 
     def forward(
         self,
@@ -134,10 +125,8 @@ class MaskDecoder(nn.Module):
         See 'forward' for more details.
         """
         # Concatenate output tokens
-        output_tokens = torch.cat(
-            [self.iou_token.weight, self.mask_tokens.weight], dim=0)
-        output_tokens = output_tokens.unsqueeze(0).expand(
-            sparse_prompt_embeddings.size(0), -1, -1)
+        output_tokens = torch.cat([self.iou_token.weight, self.mask_tokens.weight], dim=0)
+        output_tokens = output_tokens.unsqueeze(0).expand(sparse_prompt_embeddings.size(0), -1, -1)
         tokens = torch.cat((output_tokens, sparse_prompt_embeddings), dim=1)
 
         # Expand per-image data in batch direction to be per-mask
@@ -149,19 +138,17 @@ class MaskDecoder(nn.Module):
         # Run the transformer
         hs, src = self.transformer(src, pos_src, tokens)
         iou_token_out = hs[:, 0, :]
-        mask_tokens_out = hs[:, 1:(1 + self.num_mask_tokens), :]
+        mask_tokens_out = hs[:, 1 : (1 + self.num_mask_tokens), :]
 
         # Upscale mask embeddings and predict masks using the mask tokens
         src = src.transpose(1, 2).view(b, c, h, w)
         upscaled_embedding = self.output_upscaling(src)
         hyper_in_list: List[Tensor] = []
         for i in range(self.num_mask_tokens):
-            hyper_in_list.append(self.output_hypernetworks_mlps[i](
-                mask_tokens_out[:, i, :]))
+            hyper_in_list.append(self.output_hypernetworks_mlps[i](mask_tokens_out[:, i, :]))
         hyper_in = torch.stack(hyper_in_list, dim=1)
         b, c, h, w = upscaled_embedding.shape
-        masks = (hyper_in @ upscaled_embedding.view(b, c, h * w)).view(
-            b, -1, h, w)
+        masks = (hyper_in @ upscaled_embedding.view(b, c, h * w)).view(b, -1, h, w)
 
         # Generate mask quality predictions
         iou_pred = self.iou_prediction_head(iou_token_out)
@@ -172,7 +159,6 @@ class MaskDecoder(nn.Module):
 # Lightly adapted from
 # https://github.com/facebookresearch/MaskFormer/blob/main/mask_former/modeling/transformer/transformer_predictor.py # noqa
 class MLP(nn.Module):
-
     def __init__(
         self,
         input_dim: int,
@@ -184,8 +170,7 @@ class MLP(nn.Module):
         super().__init__()
         self.num_layers = num_layers
         h = [hidden_dim] * (num_layers - 1)
-        self.layers = nn.ModuleList(
-            nn.Linear(n, k) for n, k in zip([input_dim] + h, h + [output_dim]))
+        self.layers = nn.ModuleList(nn.Linear(n, k) for n, k in zip([input_dim] + h, h + [output_dim]))
         self.sigmoid_output = sigmoid_output
 
     def forward(self, x):

@@ -1,11 +1,9 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 import torch
-
 from mmseg.models import MultiLevelNeck
 
 
 def test_multilevel_neck():
-
     # Test init_weights
     MultiLevelNeck([266], 32).init_weights()
 

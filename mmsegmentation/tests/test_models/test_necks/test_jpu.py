@@ -1,7 +1,6 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 import pytest
 import torch
-
 from mmseg.models.necks import JPU
 
 
@@ -20,7 +19,7 @@ def test_fastfcn_neck():
     input = [
         torch.randn(batch_size, 64, 64, 128),
         torch.randn(batch_size, 128, 32, 64),
-        torch.randn(batch_size, 256, 16, 32)
+        torch.randn(batch_size, 256, 16, 32),
     ]
     feat = model(input)
 
@@ -38,7 +37,7 @@ def test_fastfcn_neck():
     input = [
         torch.randn(batch_size, 64, 64, 128),
         torch.randn(batch_size, 128, 32, 64),
-        torch.randn(batch_size, 256, 16, 32)
+        torch.randn(batch_size, 256, 16, 32),
     ]
     feat = model(input)
     assert len(feat) == 2

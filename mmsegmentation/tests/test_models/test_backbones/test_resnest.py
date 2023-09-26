@@ -1,7 +1,6 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 import pytest
 import torch
-
 from mmseg.models.backbones import ResNeSt
 from mmseg.models.backbones.resnest import Bottleneck as BottleneckS
 
@@ -9,11 +8,10 @@ from mmseg.models.backbones.resnest import Bottleneck as BottleneckS
 def test_resnest_bottleneck():
     with pytest.raises(AssertionError):
         # Style must be in ['pytorch', 'caffe']
-        BottleneckS(64, 64, radix=2, reduction_factor=4, style='tensorflow')
+        BottleneckS(64, 64, radix=2, reduction_factor=4, style="tensorflow")
 
     # Test ResNeSt Bottleneck structure
-    block = BottleneckS(
-        64, 256, radix=2, reduction_factor=4, stride=2, style='pytorch')
+    block = BottleneckS(64, 256, radix=2, reduction_factor=4, stride=2, style="pytorch")
     assert block.avd_layer.stride == 2
     assert block.conv2.channels == 256
 
@@ -30,8 +28,7 @@ def test_resnest_backbone():
         ResNeSt(depth=18)
 
     # Test ResNeSt with radix 2, reduction_factor 4
-    model = ResNeSt(
-        depth=50, radix=2, reduction_factor=4, out_indices=(0, 1, 2, 3))
+    model = ResNeSt(depth=50, radix=2, reduction_factor=4, out_indices=(0, 1, 2, 3))
     model.init_weights()
     model.train()
 

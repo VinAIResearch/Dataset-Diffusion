@@ -1,10 +1,8 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 import pytest
 import torch
-
 from mmseg.models.backbones import ERFNet
-from mmseg.models.backbones.erfnet import (DownsamplerBlock, NonBottleneck1d,
-                                           UpsamplerBlock)
+from mmseg.models.backbones.erfnet import DownsamplerBlock, NonBottleneck1d, UpsamplerBlock
 
 
 def test_erfnet_backbone():

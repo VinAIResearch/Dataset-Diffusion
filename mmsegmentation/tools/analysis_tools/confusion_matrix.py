@@ -7,38 +7,28 @@ import numpy as np
 from matplotlib.ticker import MultipleLocator
 from mmengine import Config, DictAction
 from mmengine.utils import ProgressBar, load
-
 from mmseg.datasets import build_dataset
 
 
 def parse_args():
-    parser = argparse.ArgumentParser(
-        description='Generate confusion matrix from segmentation results')
-    parser.add_argument('config', help='test config file path')
+    parser = argparse.ArgumentParser(description="Generate confusion matrix from segmentation results")
+    parser.add_argument("config", help="test config file path")
+    parser.add_argument("prediction_path", help="prediction path where test .pkl result")
+    parser.add_argument("save_dir", help="directory where confusion matrix will be saved")
+    parser.add_argument("--show", action="store_true", help="show confusion matrix")
+    parser.add_argument("--color-theme", default="winter", help="theme of the matrix color map")
+    parser.add_argument("--title", default="Normalized Confusion Matrix", help="title of the matrix color map")
     parser.add_argument(
-        'prediction_path', help='prediction path where test .pkl result')
-    parser.add_argument(
-        'save_dir', help='directory where confusion matrix will be saved')
-    parser.add_argument(
-        '--show', action='store_true', help='show confusion matrix')
-    parser.add_argument(
-        '--color-theme',
-        default='winter',
-        help='theme of the matrix color map')
-    parser.add_argument(
-        '--title',
-        default='Normalized Confusion Matrix',
-        help='title of the matrix color map')
-    parser.add_argument(
-        '--cfg-options',
-        nargs='+',
+        "--cfg-options",
+        nargs="+",
         action=DictAction,
-        help='override some settings in the used config, the key-value pair '
-        'in xxx=yyy format will be merged into config file. If the value to '
+        help="override some settings in the used config, the key-value pair "
+        "in xxx=yyy format will be merged into config file. If the value to "
         'be overwritten is a list, it should be like key="[a,b]" or key=a,b '
         'It also allows nested list/tuple values, e.g. key="[(a,b),(c,d)]" '
-        'Note that the quotation marks are necessary and that no white space '
-        'is allowed.')
+        "Note that the quotation marks are necessary and that no white space "
+        "is allowed.",
+    )
     args = parser.parse_args()
     return args
 
@@ -65,12 +55,9 @@ def calculate_confusion_matrix(dataset, results):
     return confusion_matrix
 
 
-def plot_confusion_matrix(confusion_matrix,
-                          labels,
-                          save_dir=None,
-                          show=True,
-                          title='Normalized Confusion Matrix',
-                          color_theme='winter'):
+def plot_confusion_matrix(
+    confusion_matrix, labels, save_dir=None, show=True, title="Normalized Confusion Matrix", color_theme="winter"
+):
     """Draw confusion matrix with matplotlib.
 
     Args:
@@ -84,21 +71,19 @@ def plot_confusion_matrix(confusion_matrix,
     """
     # normalize the confusion matrix
     per_label_sums = confusion_matrix.sum(axis=1)[:, np.newaxis]
-    confusion_matrix = \
-        confusion_matrix.astype(np.float32) / per_label_sums * 100
+    confusion_matrix = confusion_matrix.astype(np.float32) / per_label_sums * 100
 
     num_classes = len(labels)
-    fig, ax = plt.subplots(
-        figsize=(2 * num_classes, 2 * num_classes * 0.8), dpi=180)
+    fig, ax = plt.subplots(figsize=(2 * num_classes, 2 * num_classes * 0.8), dpi=180)
     cmap = plt.get_cmap(color_theme)
     im = ax.imshow(confusion_matrix, cmap=cmap)
     plt.colorbar(mappable=im, ax=ax)
 
-    title_font = {'weight': 'bold', 'size': 12}
+    title_font = {"weight": "bold", "size": 12}
     ax.set_title(title, fontdict=title_font)
-    label_font = {'size': 10}
-    plt.ylabel('Ground Truth Label', fontdict=label_font)
-    plt.xlabel('Prediction Label', fontdict=label_font)
+    label_font = {"size": 10}
+    plt.ylabel("Ground Truth Label", fontdict=label_font)
+    plt.xlabel("Prediction Label", fontdict=label_font)
 
     # draw locator
     xmajor_locator = MultipleLocator(1)
@@ -111,7 +96,7 @@ def plot_confusion_matrix(confusion_matrix,
     ax.yaxis.set_minor_locator(yminor_locator)
 
     # draw grid
-    ax.grid(True, which='minor', linestyle='-')
+    ax.grid(True, which="minor", linestyle="-")
 
     # draw label
     ax.set_xticks(np.arange(num_classes))
@@ -119,10 +104,8 @@ def plot_confusion_matrix(confusion_matrix,
     ax.set_xticklabels(labels)
     ax.set_yticklabels(labels)
 
-    ax.tick_params(
-        axis='x', bottom=False, top=True, labelbottom=False, labeltop=True)
-    plt.setp(
-        ax.get_xticklabels(), rotation=45, ha='left', rotation_mode='anchor')
+    ax.tick_params(axis="x", bottom=False, top=True, labelbottom=False, labeltop=True)
+    plt.setp(ax.get_xticklabels(), rotation=45, ha="left", rotation_mode="anchor")
 
     # draw confusion matrix value
     for i in range(num_classes):
@@ -130,20 +113,18 @@ def plot_confusion_matrix(confusion_matrix,
             ax.text(
                 j,
                 i,
-                '{}%'.format(
-                    round(confusion_matrix[i, j], 2
-                          ) if not np.isnan(confusion_matrix[i, j]) else -1),
-                ha='center',
-                va='center',
-                color='w',
-                size=7)
+                "{}%".format(round(confusion_matrix[i, j], 2) if not np.isnan(confusion_matrix[i, j]) else -1),
+                ha="center",
+                va="center",
+                color="w",
+                size=7,
+            )
 
     ax.set_ylim(len(confusion_matrix) - 0.5, -0.5)  # matplotlib>3.1.1
 
     fig.tight_layout()
     if save_dir is not None:
-        plt.savefig(
-            os.path.join(save_dir, 'confusion_matrix.png'), format='png')
+        plt.savefig(os.path.join(save_dir, "confusion_matrix.png"), format="png")
     if show:
         plt.show()
 
@@ -161,7 +142,7 @@ def main():
     if isinstance(results[0], np.ndarray):
         pass
     else:
-        raise TypeError('invalid type of prediction results')
+        raise TypeError("invalid type of prediction results")
 
     if isinstance(cfg.data.test, dict):
         cfg.data.test.test_mode = True
@@ -177,8 +158,9 @@ def main():
         save_dir=args.save_dir,
         show=args.show,
         title=args.title,
-        color_theme=args.color_theme)
+        color_theme=args.color_theme,
+    )
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

@@ -8,7 +8,6 @@ import numpy as np
 from mmcv.transforms import BaseTransform
 from mmcv.transforms import LoadAnnotations as MMCV_LoadAnnotations
 from mmcv.transforms import LoadImageFromFile
-
 from mmseg.registry import TRANSFORMS
 from mmseg.utils import datafrombytes
 
@@ -64,7 +63,7 @@ class LoadAnnotations(MMCV_LoadAnnotations):
         self,
         reduce_zero_label=None,
         backend_args=None,
-        imdecode_backend='pillow',
+        imdecode_backend="pillow",
     ) -> None:
         super().__init__(
             with_bbox=False,
@@ -72,13 +71,16 @@ class LoadAnnotations(MMCV_LoadAnnotations):
             with_seg=True,
             with_keypoints=False,
             imdecode_backend=imdecode_backend,
-            backend_args=backend_args)
+            backend_args=backend_args,
+        )
         self.reduce_zero_label = reduce_zero_label
         if self.reduce_zero_label is not None:
-            warnings.warn('`reduce_zero_label` will be deprecated, '
-                          'if you would like to ignore the zero label, please '
-                          'set `reduce_zero_label=True` when dataset '
-                          'initialized')
+            warnings.warn(
+                "`reduce_zero_label` will be deprecated, "
+                "if you would like to ignore the zero label, please "
+                "set `reduce_zero_label=True` when dataset "
+                "initialized"
+            )
         self.imdecode_backend = imdecode_backend
 
     def _load_seg_map(self, results: dict) -> None:
@@ -91,40 +93,40 @@ class LoadAnnotations(MMCV_LoadAnnotations):
             dict: The dict contains loaded semantic segmentation annotations.
         """
 
-        img_bytes = fileio.get(
-            results['seg_map_path'], backend_args=self.backend_args)
-        gt_semantic_seg = mmcv.imfrombytes(
-            img_bytes, flag='unchanged',
-            backend=self.imdecode_backend).squeeze().astype(np.uint8)
+        img_bytes = fileio.get(results["seg_map_path"], backend_args=self.backend_args)
+        gt_semantic_seg = (
+            mmcv.imfrombytes(img_bytes, flag="unchanged", backend=self.imdecode_backend).squeeze().astype(np.uint8)
+        )
 
         # reduce zero_label
         if self.reduce_zero_label is None:
-            self.reduce_zero_label = results['reduce_zero_label']
-        assert self.reduce_zero_label == results['reduce_zero_label'], \
-            'Initialize dataset with `reduce_zero_label` as ' \
-            f'{results["reduce_zero_label"]} but when load annotation ' \
-            f'the `reduce_zero_label` is {self.reduce_zero_label}'
+            self.reduce_zero_label = results["reduce_zero_label"]
+        assert self.reduce_zero_label == results["reduce_zero_label"], (
+            "Initialize dataset with `reduce_zero_label` as "
+            f'{results["reduce_zero_label"]} but when load annotation '
+            f"the `reduce_zero_label` is {self.reduce_zero_label}"
+        )
         if self.reduce_zero_label:
             # avoid using underflow conversion
             gt_semantic_seg[gt_semantic_seg == 0] = 255
             gt_semantic_seg = gt_semantic_seg - 1
             gt_semantic_seg[gt_semantic_seg == 254] = 255
         # modify if custom classes
-        if results.get('label_map', None) is not None:
+        if results.get("label_map", None) is not None:
             # Add deep copy to solve bug of repeatedly
             # replace `gt_semantic_seg`, which is reported in
             # https://github.com/open-mmlab/mmsegmentation/pull/1445/
             gt_semantic_seg_copy = gt_semantic_seg.copy()
-            for old_id, new_id in results['label_map'].items():
+            for old_id, new_id in results["label_map"].items():
                 gt_semantic_seg[gt_semantic_seg_copy == old_id] = new_id
-        results['gt_seg_map'] = gt_semantic_seg
-        results['seg_fields'].append('gt_seg_map')
+        results["gt_seg_map"] = gt_semantic_seg
+        results["seg_fields"].append("gt_seg_map")
 
     def __repr__(self) -> str:
         repr_str = self.__class__.__name__
-        repr_str += f'(reduce_zero_label={self.reduce_zero_label}, '
+        repr_str += f"(reduce_zero_label={self.reduce_zero_label}, "
         repr_str += f"imdecode_backend='{self.imdecode_backend}', "
-        repr_str += f'backend_args={self.backend_args})'
+        repr_str += f"backend_args={self.backend_args})"
         return repr_str
 
 
@@ -164,14 +166,14 @@ class LoadImageFromNDArray(LoadImageFromFile):
             dict: The dict contains loaded image and meta information.
         """
 
-        img = results['img']
+        img = results["img"]
         if self.to_float32:
             img = img.astype(np.float32)
 
-        results['img_path'] = None
-        results['img'] = img
-        results['img_shape'] = img.shape[:2]
-        results['ori_shape'] = img.shape[:2]
+        results["img_path"] = None
+        results["img"] = img
+        results["img_shape"] = img.shape[:2]
+        results["ori_shape"] = img.shape[:2]
         return results
 
 
@@ -209,11 +211,13 @@ class LoadBiomedicalImageFromFile(BaseTransform):
             Notes: mmcv>=2.0.0rc4, mmengine>=0.2.0 required.
     """
 
-    def __init__(self,
-                 decode_backend: str = 'nifti',
-                 to_xyz: bool = False,
-                 to_float32: bool = True,
-                 backend_args: Optional[dict] = None) -> None:
+    def __init__(
+        self,
+        decode_backend: str = "nifti",
+        to_xyz: bool = False,
+        to_float32: bool = True,
+        backend_args: Optional[dict] = None,
+    ) -> None:
         self.decode_backend = decode_backend
         self.to_xyz = to_xyz
         self.to_float32 = to_float32
@@ -229,7 +233,7 @@ class LoadBiomedicalImageFromFile(BaseTransform):
             dict: The dict contains loaded image and meta information.
         """
 
-        filename = results['img_path']
+        filename = results["img_path"]
 
         data_bytes = fileio.get(filename, self.backend_args)
         img = datafrombytes(data_bytes, backend=self.decode_backend)
@@ -240,23 +244,25 @@ class LoadBiomedicalImageFromFile(BaseTransform):
         if len(img.shape) == 3:
             img = img[None, ...]
 
-        if self.decode_backend == 'nifti':
+        if self.decode_backend == "nifti":
             img = img.transpose(0, 3, 2, 1)
 
         if self.to_xyz:
             img = img.transpose(0, 3, 2, 1)
 
-        results['img'] = img
-        results['img_shape'] = img.shape[1:]
-        results['ori_shape'] = img.shape[1:]
+        results["img"] = img
+        results["img_shape"] = img.shape[1:]
+        results["ori_shape"] = img.shape[1:]
         return results
 
     def __repr__(self):
-        repr_str = (f'{self.__class__.__name__}('
-                    f"decode_backend='{self.decode_backend}', "
-                    f'to_xyz={self.to_xyz}, '
-                    f'to_float32={self.to_float32}, '
-                    f'backend_args={self.backend_args})')
+        repr_str = (
+            f"{self.__class__.__name__}("
+            f"decode_backend='{self.decode_backend}', "
+            f"to_xyz={self.to_xyz}, "
+            f"to_float32={self.to_float32}, "
+            f"backend_args={self.backend_args})"
+        )
         return repr_str
 
 
@@ -299,11 +305,13 @@ class LoadBiomedicalAnnotation(BaseTransform):
             Notes: mmcv>=2.0.0rc4, mmengine>=0.2.0 required.
     """
 
-    def __init__(self,
-                 decode_backend: str = 'nifti',
-                 to_xyz: bool = False,
-                 to_float32: bool = True,
-                 backend_args: Optional[dict] = None) -> None:
+    def __init__(
+        self,
+        decode_backend: str = "nifti",
+        to_xyz: bool = False,
+        to_float32: bool = True,
+        backend_args: Optional[dict] = None,
+    ) -> None:
         super().__init__()
         self.decode_backend = decode_backend
         self.to_xyz = to_xyz
@@ -319,27 +327,29 @@ class LoadBiomedicalAnnotation(BaseTransform):
         Returns:
             dict: The dict contains loaded image and meta information.
         """
-        data_bytes = fileio.get(results['seg_map_path'], self.backend_args)
+        data_bytes = fileio.get(results["seg_map_path"], self.backend_args)
         gt_seg_map = datafrombytes(data_bytes, backend=self.decode_backend)
 
         if self.to_float32:
             gt_seg_map = gt_seg_map.astype(np.float32)
 
-        if self.decode_backend == 'nifti':
+        if self.decode_backend == "nifti":
             gt_seg_map = gt_seg_map.transpose(2, 1, 0)
 
         if self.to_xyz:
             gt_seg_map = gt_seg_map.transpose(2, 1, 0)
 
-        results['gt_seg_map'] = gt_seg_map
+        results["gt_seg_map"] = gt_seg_map
         return results
 
     def __repr__(self):
-        repr_str = (f'{self.__class__.__name__}('
-                    f"decode_backend='{self.decode_backend}', "
-                    f'to_xyz={self.to_xyz}, '
-                    f'to_float32={self.to_float32}, '
-                    f'backend_args={self.backend_args})')
+        repr_str = (
+            f"{self.__class__.__name__}("
+            f"decode_backend='{self.decode_backend}', "
+            f"to_xyz={self.to_xyz}, "
+            f"to_float32={self.to_float32}, "
+            f"backend_args={self.backend_args})"
+        )
         return repr_str
 
 
@@ -386,11 +396,9 @@ class LoadBiomedicalData(BaseTransform):
             Notes: mmcv>=2.0.0rc4, mmengine>=0.2.0 required.
     """
 
-    def __init__(self,
-                 with_seg=False,
-                 decode_backend: str = 'numpy',
-                 to_xyz: bool = False,
-                 backend_args: Optional[dict] = None) -> None:  # noqa
+    def __init__(
+        self, with_seg=False, decode_backend: str = "numpy", to_xyz: bool = False, backend_args: Optional[dict] = None
+    ) -> None:  # noqa
         self.with_seg = with_seg
         self.decode_backend = decode_backend
         self.to_xyz = to_xyz
@@ -405,37 +413,39 @@ class LoadBiomedicalData(BaseTransform):
         Returns:
             dict: The dict contains loaded image and meta information.
         """
-        data_bytes = fileio.get(results['img_path'], self.backend_args)
+        data_bytes = fileio.get(results["img_path"], self.backend_args)
         data = datafrombytes(data_bytes, backend=self.decode_backend)
         # img is 4D data (N, X, Y, Z), N is the number of protocol
         img = data[:-1, :]
 
-        if self.decode_backend == 'nifti':
+        if self.decode_backend == "nifti":
             img = img.transpose(0, 3, 2, 1)
 
         if self.to_xyz:
             img = img.transpose(0, 3, 2, 1)
 
-        results['img'] = img
-        results['img_shape'] = img.shape[1:]
-        results['ori_shape'] = img.shape[1:]
+        results["img"] = img
+        results["img_shape"] = img.shape[1:]
+        results["ori_shape"] = img.shape[1:]
 
         if self.with_seg:
             gt_seg_map = data[-1, :]
-            if self.decode_backend == 'nifti':
+            if self.decode_backend == "nifti":
                 gt_seg_map = gt_seg_map.transpose(2, 1, 0)
 
             if self.to_xyz:
                 gt_seg_map = gt_seg_map.transpose(2, 1, 0)
-            results['gt_seg_map'] = gt_seg_map
+            results["gt_seg_map"] = gt_seg_map
         return results
 
     def __repr__(self) -> str:
-        repr_str = (f'{self.__class__.__name__}('
-                    f'with_seg={self.with_seg}, '
-                    f"decode_backend='{self.decode_backend}', "
-                    f'to_xyz={self.to_xyz}, '
-                    f'backend_args={self.backend_args})')
+        repr_str = (
+            f"{self.__class__.__name__}("
+            f"with_seg={self.with_seg}, "
+            f"decode_backend='{self.decode_backend}', "
+            f"to_xyz={self.to_xyz}, "
+            f"backend_args={self.backend_args})"
+        )
         return repr_str
 
 
@@ -466,10 +476,8 @@ class InferencerLoader(BaseTransform):
 
     def __init__(self, **kwargs) -> None:
         super().__init__()
-        self.from_file = TRANSFORMS.build(
-            dict(type='LoadImageFromFile', **kwargs))
-        self.from_ndarray = TRANSFORMS.build(
-            dict(type='LoadImageFromNDArray', **kwargs))
+        self.from_file = TRANSFORMS.build(dict(type="LoadImageFromFile", **kwargs))
+        self.from_ndarray = TRANSFORMS.build(dict(type="LoadImageFromNDArray", **kwargs))
 
     def transform(self, single_input: Union[str, np.ndarray, dict]) -> dict:
         """Transform function to add image meta information.
@@ -490,6 +498,6 @@ class InferencerLoader(BaseTransform):
         else:
             raise NotImplementedError
 
-        if 'img' in inputs:
+        if "img" in inputs:
             return self.from_ndarray(inputs)
         return self.from_file(inputs)

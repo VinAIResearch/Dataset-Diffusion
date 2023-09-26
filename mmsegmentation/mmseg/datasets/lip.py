@@ -1,5 +1,6 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 from mmseg.registry import DATASETS
+
 from .basesegdataset import BaseSegDataset
 
 
@@ -10,12 +11,30 @@ class LIPDataset(BaseSegDataset):
     The ``img_suffix`` is fixed to '.jpg' and ``seg_map_suffix`` is fixed to
     '.png'.
     """
+
     METAINFO = dict(
-        classes=('Background', 'Hat', 'Hair', 'Glove', 'Sunglasses',
-                 'UpperClothes', 'Dress', 'Coat', 'Socks', 'Pants',
-                 'Jumpsuits', 'Scarf', 'Skirt', 'Face', 'Left-arm',
-                 'Right-arm', 'Left-leg', 'Right-leg', 'Left-shoe',
-                 'Right-shoe'),
+        classes=(
+            "Background",
+            "Hat",
+            "Hair",
+            "Glove",
+            "Sunglasses",
+            "UpperClothes",
+            "Dress",
+            "Coat",
+            "Socks",
+            "Pants",
+            "Jumpsuits",
+            "Scarf",
+            "Skirt",
+            "Face",
+            "Left-arm",
+            "Right-arm",
+            "Left-leg",
+            "Right-leg",
+            "Left-shoe",
+            "Right-shoe",
+        ),
         palette=(
             [0, 0, 0],
             [128, 0, 0],
@@ -37,11 +56,8 @@ class LIPDataset(BaseSegDataset):
             [170, 255, 85],
             [255, 255, 0],
             [255, 170, 0],
-        ))
+        ),
+    )
 
-    def __init__(self,
-                 img_suffix='.jpg',
-                 seg_map_suffix='.png',
-                 **kwargs) -> None:
-        super().__init__(
-            img_suffix=img_suffix, seg_map_suffix=seg_map_suffix, **kwargs)
+    def __init__(self, img_suffix=".jpg", seg_map_suffix=".png", **kwargs) -> None:
+        super().__init__(img_suffix=img_suffix, seg_map_suffix=seg_map_suffix, **kwargs)

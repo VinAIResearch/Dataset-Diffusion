@@ -49,15 +49,9 @@ def label_mapping(label):
 
 
 def pares_args():
-    parser = argparse.ArgumentParser(
-        description='Convert synapse dataset to mmsegmentation format')
-    parser.add_argument(
-        '--dataset-path', type=str, help='synapse dataset path.')
-    parser.add_argument(
-        '--save-path',
-        default='data/synapse',
-        type=str,
-        help='save path of the dataset.')
+    parser = argparse.ArgumentParser(description="Convert synapse dataset to mmsegmentation format")
+    parser.add_argument("--dataset-path", type=str, help="synapse dataset path.")
+    parser.add_argument("--save-path", default="data/synapse", type=str, help="save path of the dataset.")
     args = parser.parse_args()
     return args
 
@@ -68,31 +62,26 @@ def main():
     save_path = args.save_path
 
     if not osp.exists(dataset_path):
-        raise ValueError('The dataset path does not exist. '
-                         'Please enter a correct dataset path.')
-    if not osp.exists(osp.join(dataset_path, 'img')) \
-            or not osp.exists(osp.join(dataset_path, 'label')):
-        raise FileNotFoundError('The dataset structure is incorrect. '
-                                'Please check your dataset.')
+        raise ValueError("The dataset path does not exist. " "Please enter a correct dataset path.")
+    if not osp.exists(osp.join(dataset_path, "img")) or not osp.exists(osp.join(dataset_path, "label")):
+        raise FileNotFoundError("The dataset structure is incorrect. " "Please check your dataset.")
 
-    train_id = read_files_from_txt(osp.join(dataset_path, 'train.txt'))
+    train_id = read_files_from_txt(osp.join(dataset_path, "train.txt"))
     train_id = [idx[3:7] for idx in train_id]
 
-    test_id = read_files_from_txt(osp.join(dataset_path, 'val.txt'))
+    test_id = read_files_from_txt(osp.join(dataset_path, "val.txt"))
     test_id = [idx[3:7] for idx in test_id]
 
-    mkdir_or_exist(osp.join(save_path, 'img_dir/train'))
-    mkdir_or_exist(osp.join(save_path, 'img_dir/val'))
-    mkdir_or_exist(osp.join(save_path, 'ann_dir/train'))
-    mkdir_or_exist(osp.join(save_path, 'ann_dir/val'))
+    mkdir_or_exist(osp.join(save_path, "img_dir/train"))
+    mkdir_or_exist(osp.join(save_path, "img_dir/val"))
+    mkdir_or_exist(osp.join(save_path, "ann_dir/train"))
+    mkdir_or_exist(osp.join(save_path, "ann_dir/val"))
 
     # It follows data preparation pipeline from here:
     # https://github.com/Beckschen/TransUNet/tree/main/datasets
     for i, idx in enumerate(train_id):
-        img_3d = read_nii_file(
-            osp.join(dataset_path, 'img', 'img' + idx + '.nii.gz'))
-        label_3d = read_nii_file(
-            osp.join(dataset_path, 'label', 'label' + idx + '.nii.gz'))
+        img_3d = read_nii_file(osp.join(dataset_path, "img", "img" + idx + ".nii.gz"))
+        label_3d = read_nii_file(osp.join(dataset_path, "label", "label" + idx + ".nii.gz"))
 
         img_3d = np.clip(img_3d, -125, 275)
         img_3d = (img_3d + 125) / 400
@@ -108,22 +97,16 @@ def main():
             img = img_3d[c]
             label = label_3d[c]
 
-            img = Image.fromarray(img).convert('RGB')
-            label = Image.fromarray(label).convert('L')
-            img.save(
-                osp.join(
-                    save_path, 'img_dir/train', 'case' + idx.zfill(4) +
-                    '_slice' + str(c).zfill(3) + '.jpg'))
+            img = Image.fromarray(img).convert("RGB")
+            label = Image.fromarray(label).convert("L")
+            img.save(osp.join(save_path, "img_dir/train", "case" + idx.zfill(4) + "_slice" + str(c).zfill(3) + ".jpg"))
             label.save(
-                osp.join(
-                    save_path, 'ann_dir/train', 'case' + idx.zfill(4) +
-                    '_slice' + str(c).zfill(3) + '.png'))
+                osp.join(save_path, "ann_dir/train", "case" + idx.zfill(4) + "_slice" + str(c).zfill(3) + ".png")
+            )
 
     for i, idx in enumerate(test_id):
-        img_3d = read_nii_file(
-            osp.join(dataset_path, 'img', 'img' + idx + '.nii.gz'))
-        label_3d = read_nii_file(
-            osp.join(dataset_path, 'label', 'label' + idx + '.nii.gz'))
+        img_3d = read_nii_file(osp.join(dataset_path, "img", "img" + idx + ".nii.gz"))
+        label_3d = read_nii_file(osp.join(dataset_path, "label", "label" + idx + ".nii.gz"))
 
         img_3d = np.clip(img_3d, -125, 275)
         img_3d = (img_3d + 125) / 400
@@ -139,17 +122,11 @@ def main():
             img = img_3d[c]
             label = label_3d[c]
 
-            img = Image.fromarray(img).convert('RGB')
-            label = Image.fromarray(label).convert('L')
-            img.save(
-                osp.join(
-                    save_path, 'img_dir/val', 'case' + idx.zfill(4) +
-                    '_slice' + str(c).zfill(3) + '.jpg'))
-            label.save(
-                osp.join(
-                    save_path, 'ann_dir/val', 'case' + idx.zfill(4) +
-                    '_slice' + str(c).zfill(3) + '.png'))
+            img = Image.fromarray(img).convert("RGB")
+            label = Image.fromarray(label).convert("L")
+            img.save(osp.join(save_path, "img_dir/val", "case" + idx.zfill(4) + "_slice" + str(c).zfill(3) + ".jpg"))
+            label.save(osp.join(save_path, "ann_dir/val", "case" + idx.zfill(4) + "_slice" + str(c).zfill(3) + ".png"))
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

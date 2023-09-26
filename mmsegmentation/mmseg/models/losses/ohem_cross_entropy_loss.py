@@ -3,9 +3,8 @@ from typing import List, Optional, Union
 
 import torch.nn as nn
 import torch.nn.functional as F
-from torch import Tensor
-
 from mmseg.registry import MODELS
+from torch import Tensor
 
 
 @MODELS.register_module()
@@ -34,13 +33,15 @@ class OhemCrossEntropy(nn.Module):
             prefix of the name. Defaults to 'loss_boundary'.
     """
 
-    def __init__(self,
-                 ignore_label: int = 255,
-                 thres: float = 0.7,
-                 min_kept: int = 100000,
-                 loss_weight: float = 1.0,
-                 class_weight: Optional[Union[List[float], str]] = None,
-                 loss_name: str = 'loss_ohem'):
+    def __init__(
+        self,
+        ignore_label: int = 255,
+        thres: float = 0.7,
+        min_kept: int = 100000,
+        loss_weight: float = 1.0,
+        class_weight: Optional[Union[List[float], str]] = None,
+        loss_name: str = "loss_ohem",
+    ):
         super().__init__()
         self.thresh = thres
         self.min_kept = max(1, min_kept)
@@ -65,12 +66,11 @@ class OhemCrossEntropy(nn.Module):
         else:
             class_weight = None
 
-        pixel_losses = F.cross_entropy(
-            score,
-            target,
-            weight=class_weight,
-            ignore_index=self.ignore_label,
-            reduction='none').contiguous().view(-1)  # (N*H*W)
+        pixel_losses = (
+            F.cross_entropy(score, target, weight=class_weight, ignore_index=self.ignore_label, reduction="none")
+            .contiguous()
+            .view(-1)
+        )  # (N*H*W)
         mask = target.contiguous().view(-1) != self.ignore_label  # (N*H*W)
 
         tmp_target = target.clone()  # (N, H, W)
@@ -78,7 +78,14 @@ class OhemCrossEntropy(nn.Module):
         # pred: (N, C, H, W) -> (N*H*W, C)
         pred = pred.gather(1, tmp_target.unsqueeze(1))
         # pred: (N*H*W, C) -> (N*H*W), ind: (N*H*W)
-        pred, ind = pred.contiguous().view(-1, )[mask].contiguous().sort()
+        pred, ind = (
+            pred.contiguous()
+            .view(
+                -1,
+            )[mask]
+            .contiguous()
+            .sort()
+        )
         if pred.numel() > 0:
             min_value = pred[min(self.min_kept, pred.numel() - 1)]
         else:
