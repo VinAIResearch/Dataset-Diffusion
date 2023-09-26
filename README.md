@@ -8,7 +8,7 @@
 
 
 # **PyTorch implementation of Dataset Diffusion: Diffusion-based Synthetic Data Generation for Pixel-Level Semantic Segmentation (NeuRIPS2023)**
-<a href="https://arxiv.org/abs/"><img src="https://img.shields.io/badge/arxiv-2303.14157-red?style=for-the-badge"></a>
+<a href="https://arxiv.org/abs/2309.14303"><img src="https://img.shields.io/badge/arxiv-2309.14303-red?style=for-the-badge"></a>
 
 [Quang Ho Nguyen](https://quang-ngh.github.io/),
 Truong Vu,
@@ -34,7 +34,7 @@ and our approach significantly outperforms concurrent work.
 
 ![teaser.png](./assets/teaser6-1.png)
 
-Details of the model architecture and experimental results can be found in [our following paper](https://arxiv.org/abs/).<br>
+Details of the model architecture and experimental results can be found in [our following paper](https://arxiv.org/abs/2309.14303).<br>
 Please **CITE** our paper whenever this repository is used to help produce published results or incorporated into other software.
 ```bibtex
 @inproceedings{quangtruong2023@dd,
