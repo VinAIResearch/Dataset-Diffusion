@@ -7,12 +7,12 @@
 3. [Contacts](#contacts)
 
 
-# **PyTorch implementation of Dataset Diffusion: Diffusion-based Synthetic Data Generation for Pixel-Level Semantic Segmentation (NeuRIPS2023)**
+# **PyTorch implementation of Dataset Diffusion: Diffusion-based Synthetic Data Generation for Pixel-Level Semantic Segmentation (NeurIPS2023)**
 <a href="https://arxiv.org/abs/2309.14303"><img src="https://img.shields.io/badge/arxiv-2309.14303-red?style=for-the-badge"></a>
 
-[Quang Ho Nguyen](https://quang-ngh.github.io/),
-Truong Vu,
-[Anh Tran](https://sites.google.com/site/anhttranusc/),
+[Quang Nguyen](https://quang-ngh.github.io/),
+[Truong Vu](https://scholar.google.com/citations?user=mTbQ2ZsAAAAJ&hl=vi),
+[Anh Tran](https://scholar.google.com/citations?user=FYZ5ODQAAAAJ&hl=en),
 [Khoi Nguyen](https://khoinguyen.org)<br>
 **VinAI Research, Vietnam**
 
