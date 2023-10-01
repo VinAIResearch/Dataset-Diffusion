@@ -21,7 +21,7 @@ from diffusers.loaders import TextualInversionLoaderMixin
 from diffusers.pipelines.stable_diffusion import StableDiffusionPipelineOutput
 
 
-logger = logging.get_logger(__name__)
+# logger = logging.get_logger(__name__)
 
 EXAMPLE_DOC_STRING = """
 """
