@@ -32,7 +32,7 @@ uncertainty regions into the segmentation, allowing us to disregard loss from th
 regions. We conduct evaluations on two datasets, PASCAL VOC and MSCOCO,
 and our approach significantly outperforms concurrent work.
 
-![teaser.png](./assets/teaser6-1.png)
+![teaser.png](./assets/main_diagram8-1.png)
 
 Details of the model architecture and experimental results can be found in [our following paper](https://arxiv.org/abs/2309.14303).<br>
 Please **CITE** our paper whenever this repository is used to help produce published results or incorporated into other software.
