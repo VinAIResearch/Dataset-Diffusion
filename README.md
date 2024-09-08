@@ -84,10 +84,10 @@ You can alter the number of GPUs for training specified in these scripts.
 
 ##  **Dataset**
 The generated dataset is provided [here](https://drive.google.com/file/d/1_4-13V9lfwJneMD-jHmg0Igcf6HV8-F_/view?usp=sharing)
-
-By downloading this dataset, USER agrees:
-- to use the dataset for research or educational purposes only.
-- to not distribute the dataset or part of the dataset in any original or modified form.
-- and to cite our paper whenever the dataset is used to help produce published results.
+> ***By downloading this dataset, USER agrees:***
+>   
+> * to use the dataset for research or educational purposes only.
+> * to not distribute the dataset or part of the dataset in any original or modified form.
+> * and to cite our paper whenever the dataset is used to help produce published results.
 ## **Contacts**:
 If you have any questions about this project, please don't hestitate to drop me an email quangngcs@gmail.com or open an issue in this repository
